@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -49,6 +50,7 @@ const dependants = [
 ];
 
 export default function DependantsScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredDependants = dependants.filter((person) =>
@@ -91,7 +93,11 @@ export default function DependantsScreen() {
 
           <View style={styles.personList}>
             {filteredDependants.map((person) => (
-              <Pressable key={person.id} style={styles.personCard}>
+              <Pressable 
+                key={person.id} 
+                style={styles.personCard}
+                onPress={() => router.push(`../track-person?personId=${person.id}`)}
+              >
                 <View style={styles.personAvatar}>
                   <ThemedText style={styles.avatarText}>{person.avatar}</ThemedText>
                 </View>
