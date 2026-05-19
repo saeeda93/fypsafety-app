@@ -5,6 +5,19 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 
+const locationHistoryData = [
+  { id: 1, name: 'Central Park', address: 'New York, NY 10024', type: 'Safe location', icon: '📍', time: '3:45 PM', trackedBy: ['Sarah M', 'Mike K'] },
+  { id: 2, name: 'Starbucks Coffee', address: '585 Broadway, New York, NY', type: 'Safe location', icon: '📍', time: '2:20 PM', trackedBy: ['Sarah M'] },
+  { id: 3, name: 'Penn Station', address: '4 Pennsylvania Plaza, New York, NY', type: 'Transit location', icon: '📍', time: '1:15 PM', trackedBy: ['Sarah M', 'Mike K', 'Emma L'] },
+  { id: 4, name: 'Home', address: 'Brooklyn, NY 10001', type: 'Safe location', icon: '🏠', time: '11:30 AM', trackedBy: ['Mike K'] },
+  { id: 5, name: 'Whole Foods Market', address: '242 3rd St, Brooklyn, NY', type: 'Safe location', icon: '📍', time: '10:45 AM', trackedBy: ['Mike K', 'Emma L'] },
+  { id: 6, name: 'Grand Central Terminal', address: '89 E 42nd St, New York, NY', type: 'Transit location', icon: '📍', time: '9:20 AM', trackedBy: ['Sarah M'] },
+  { id: 7, name: 'Prospect Park', address: 'Brooklyn, NY 11215', type: 'Safe location', icon: '📍', time: '8:15 AM', trackedBy: ['Mike K', 'Emma L', 'James C'] },
+  { id: 8, name: 'Bagel Cafe', address: '123 Court St, Brooklyn, NY', type: 'Safe location', icon: '📍', time: '7:30 AM', trackedBy: ['Sarah M', 'Mike K'] },
+  { id: 9, name: 'Work Office', address: '500 5th Ave, New York, NY', type: 'Safe location', icon: '📍', time: '6:45 AM', trackedBy: ['Sarah M', 'James C'] },
+  { id: 10, name: 'Train Station', address: 'Atlantic Terminal, Brooklyn, NY', type: 'Transit location', icon: '📍', time: '6:00 AM', trackedBy: ['Mike K', 'Emma L'] },
+];
+
 export default function TrackingScreen() {
   const minRadius = 1;
   const maxRadius = 50;
@@ -13,6 +26,7 @@ export default function TrackingScreen() {
   const [sliderWidth, setSliderWidth] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [showLocationHistory, setShowLocationHistory] = useState(false);
+  const [visibleLocations, setVisibleLocations] = useState(5);
 
   const incrementRadius = () => setRadius((value) => Math.min(maxRadius, Math.round((value + 0.5) * 10) / 10));
   const decrementRadius = () => setRadius((value) => Math.max(minRadius, Math.round((value - 0.5) * 10) / 10));
@@ -187,184 +201,55 @@ export default function TrackingScreen() {
               </View>
 
               <ScrollView style={styles.locationsList} nestedScrollEnabled>
-                <View style={styles.locationItem}>
-                  <View style={styles.locationIcon}>
-                    <ThemedText>📍</ThemedText>
-                  </View>
-                  <View style={styles.locationInfo}>
-                    <ThemedText type="default" style={styles.locationName}>
-                      Central Park
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      New York, NY 10024
-                    </ThemedText>
-                    <View style={styles.locationMeta}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        ● Safe location
-                      </ThemedText>
+                {locationHistoryData.slice(0, visibleLocations).map((location) => (
+                  <View key={location.id} style={styles.locationItem}>
+                    <View style={styles.locationIcon}>
+                      <ThemedText>{location.icon}</ThemedText>
                     </View>
-                    <View style={styles.trackedByGroup}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        tracked by:
+                    <View style={styles.locationInfo}>
+                      <ThemedText type="default" style={styles.locationName}>
+                        {location.name}
                       </ThemedText>
-                      <View style={styles.avatarGroup}>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>S</ThemedText>
-                        </View>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>M</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {location.address}
+                      </ThemedText>
+                      <View style={styles.locationMeta}>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          ● {location.type}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.trackedByGroup}>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          tracked by:
+                        </ThemedText>
+                        <View style={styles.avatarGroup}>
+                          {location.trackedBy.map((person, idx) => (
+                            <View key={idx} style={styles.avatar}>
+                              <ThemedText style={styles.avatarText}>
+                                {person.charAt(0)}
+                              </ThemedText>
+                            </View>
+                          ))}
                         </View>
                       </View>
                     </View>
-                  </View>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    3:45 PM
-                  </ThemedText>
-                </View>
-
-                <View style={styles.locationItem}>
-                  <View style={styles.locationIcon}>
-                    <ThemedText>📍</ThemedText>
-                  </View>
-                  <View style={styles.locationInfo}>
-                    <ThemedText type="default" style={styles.locationName}>
-                      Starbucks Coffee
-                    </ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      585 Broadway, New York, NY
+                      {location.time}
                     </ThemedText>
-                    <View style={styles.locationMeta}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        ● Safe location
-                      </ThemedText>
-                    </View>
-                    <View style={styles.trackedByGroup}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        tracked by:
-                      </ThemedText>
-                      <View style={styles.avatarGroup}>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>S</ThemedText>
-                        </View>
-                      </View>
-                    </View>
                   </View>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    2:20 PM
-                  </ThemedText>
-                </View>
-
-                <View style={styles.locationItem}>
-                  <View style={styles.locationIcon}>
-                    <ThemedText>📍</ThemedText>
-                  </View>
-                  <View style={styles.locationInfo}>
-                    <ThemedText type="default" style={styles.locationName}>
-                      Penn Station
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      4 Pennsylvania Plaza, New York, NY
-                    </ThemedText>
-                    <View style={styles.locationMeta}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        ● Transit location
-                      </ThemedText>
-                    </View>
-                    <View style={styles.trackedByGroup}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        tracked by:
-                      </ThemedText>
-                      <View style={styles.avatarGroup}>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>S</ThemedText>
-                        </View>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>M</ThemedText>
-                        </View>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>E</ThemedText>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    1:15 PM
-                  </ThemedText>
-                </View>
-
-                <View style={styles.locationItem}>
-                  <View style={styles.locationIcon}>
-                    <ThemedText>🏠</ThemedText>
-                  </View>
-                  <View style={styles.locationInfo}>
-                    <ThemedText type="default" style={styles.locationName}>
-                      Home
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      Brooklyn, NY 10001
-                    </ThemedText>
-                    <View style={styles.locationMeta}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        ● Safe location
-                      </ThemedText>
-                    </View>
-                    <View style={styles.trackedByGroup}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        tracked by:
-                      </ThemedText>
-                      <View style={styles.avatarGroup}>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>M</ThemedText>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    11:30 AM
-                  </ThemedText>
-                </View>
-
-                <View style={styles.locationItem}>
-                  <View style={styles.locationIcon}>
-                    <ThemedText>📍</ThemedText>
-                  </View>
-                  <View style={styles.locationInfo}>
-                    <ThemedText type="default" style={styles.locationName}>
-                      Whole Foods Market
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      242 3rd St, Brooklyn, NY
-                    </ThemedText>
-                    <View style={styles.locationMeta}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        ● Safe location
-                      </ThemedText>
-                    </View>
-                    <View style={styles.trackedByGroup}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        tracked by:
-                      </ThemedText>
-                      <View style={styles.avatarGroup}>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>M</ThemedText>
-                        </View>
-                        <View style={styles.avatar}>
-                          <ThemedText style={styles.avatarText}>E</ThemedText>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    10:45 AM
-                  </ThemedText>
-                </View>
+                ))}
               </ScrollView>
 
-              <Pressable style={styles.loadEarlierButton}>
-                <ThemedText style={styles.loadEarlierText}>
-                  Load Earlier Locations
-                </ThemedText>
-              </Pressable>
+              {visibleLocations < locationHistoryData.length && (
+                <Pressable 
+                  style={styles.loadEarlierButton}
+                  onPress={() => setVisibleLocations(visibleLocations + 5)}
+                >
+                  <ThemedText style={styles.loadEarlierText}>
+                    Load Earlier Locations
+                  </ThemedText>
+                </Pressable>
+              )}
             </View>
           )}
         </ScrollView>

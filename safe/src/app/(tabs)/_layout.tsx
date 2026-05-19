@@ -16,7 +16,12 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: theme.textSecondary,
         tabBarLabelStyle: styles.tabLabel,
       }}
-    />
+    >
+      <Tabs.Screen name="home" options={{ title: 'Home' }} />
+      <Tabs.Screen name="tracking" options={{ title: 'Tracking' }} />
+      <Tabs.Screen name="recordings" options={{ title: 'Dependants' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+    </Tabs>
   );
 }
 

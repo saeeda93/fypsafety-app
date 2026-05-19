@@ -67,7 +67,7 @@ export default function LoginScreen() {
               </ThemedText>
             </Pressable>
 
-            <Link href="../home?showPermissions=1" asChild>
+            <Link href="../home" asChild>
               <Pressable style={styles.primaryButton}>
                 <ThemedText type="default" style={styles.primaryButtonText}>
                   Sign In
