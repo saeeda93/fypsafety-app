@@ -1,8 +1,7 @@
 import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
+import { AppLogo } from '@/components/app-logo';import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 
@@ -25,10 +24,32 @@ const activities = [
   { title: 'James started tracking you', time: '1 hour ago' },
 ];
 
+const notifications = [
+  {
+    title: 'Emergency Alert',
+    description: 'Sarah Mitchell requested help nearby.',
+    time: '2m ago',
+    type: 'emergency',
+  },
+  {
+    title: 'Boundary Crossed',
+    description: 'Alex Chen left the safe zone at Riverside Park.',
+    time: '15m ago',
+    type: 'boundary',
+  },
+  {
+    title: 'Safety Check',
+    description: 'Jordan Taylor marked themselves safe.',
+    time: '1h ago',
+    type: 'check',
+  },
+];
+
 export default function HomeScreen() {
   const router = useRouter();
   const { showPermissions } = useLocalSearchParams();
   const [modalVisible, setModalVisible] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     if (showPermissions === '1') {
@@ -41,8 +62,11 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.headerRow}>
-            <ThemedText type="subtitle">SafeGuard</ThemedText>
-            <Pressable style={styles.iconButton} onPress={() => {}}> 
+            <View style={styles.brandRow}>
+              <AppLogo size={40} />
+              <ThemedText type="subtitle">SafeGuard</ThemedText>
+            </View>
+            <Pressable style={styles.iconButton} onPress={() => setShowNotifications(true)}>
               <ThemedText type="default">🔔</ThemedText>
             </Pressable>
           </View>
@@ -151,6 +175,42 @@ export default function HomeScreen() {
               </View>
             </View>
           </Modal>
+
+          <Modal animationType="fade" transparent visible={showNotifications}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeaderRow}>
+                  <ThemedText type="subtitle">Notifications</ThemedText>
+                  <Pressable onPress={() => setShowNotifications(false)} style={styles.closeButton}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Recent alerts from your safety network.
+                </ThemedText>
+                <View style={styles.notificationList}>
+                  {notifications.map((notification) => (
+                    <View key={notification.title + notification.time} style={styles.notificationCard}>
+                      <View style={[styles.notificationBadge, notification.type === 'emergency' && styles.emergencyBadge, notification.type === 'boundary' && styles.boundaryBadge, notification.type === 'check' && styles.checkBadge]}>
+                        <ThemedText type="default">{notification.type === 'emergency' ? '!' : notification.type === 'boundary' ? '⚠️' : '✓'}</ThemedText>
+                      </View>
+                      <View style={styles.notificationContent}>
+                        <ThemedText type="default" style={styles.notificationTitle}>
+                          {notification.title}
+                        </ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {notification.description}
+                        </ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary" style={styles.notificationTime}>
+                          {notification.time}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </Modal>
           <View style={styles.peopleList}>
             {people.map((person) => (
               <View key={person.name} style={styles.personCard}>
@@ -250,6 +310,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
   },
   iconButton: {
     width: 42,
@@ -467,5 +532,57 @@ const styles = StyleSheet.create({
   skipButton: {
     alignItems: 'center',
     paddingVertical: Spacing.two,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f2f4f7',
+  },
+  notificationList: {
+    gap: Spacing.three,
+    marginTop: Spacing.four,
+  },
+  notificationCard: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#f8f7ff',
+  },
+  notificationBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e7e8ff',
+  },
+  emergencyBadge: {
+    backgroundColor: '#ffe6e5',
+  },
+  boundaryBadge: {
+    backgroundColor: '#eef4e7',
+  },
+  checkBadge: {
+    backgroundColor: '#e6f3f9',
+  },
+  notificationContent: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  notificationTitle: {
+    fontWeight: '700',
+  },
+  notificationTime: {
+    color: '#6f7988',
   },
 });

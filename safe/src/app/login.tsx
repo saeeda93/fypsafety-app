@@ -2,6 +2,7 @@ import { useRouter, Link } from 'expo-router';
 import React, { useState } from 'react';
 import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { AppLogo } from '@/components/app-logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -15,9 +16,12 @@ export default function LoginScreen() {
     <ThemedView style={styles.scene}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <ThemedText type="title" style={styles.brandTitle}>
-            SafeGuard
-          </ThemedText>
+          <View style={styles.brandRow}>
+            <AppLogo size={56} />
+            <ThemedText type="title" style={styles.brandTitle}>
+              SafeGuard
+            </ThemedText>
+          </View>
           <ThemedText type="small" style={styles.brandSubtitle} themeColor="textSecondary">
             Your personal safety companion.
           </ThemedText>
@@ -117,6 +121,11 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     justifyContent: 'center',
     gap: Spacing.four,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
   },
   brandTitle: {
     fontSize: 42,
