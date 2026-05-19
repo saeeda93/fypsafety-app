@@ -63,11 +63,13 @@ export default function LoginScreen() {
               </ThemedText>
             </Pressable>
 
-            <Pressable style={styles.primaryButton} onPress={() => router.push('/')}> 
-              <ThemedText type="default" style={styles.primaryButtonText}>
-                Sign In
-              </ThemedText>
-            </Pressable>
+            <Link href="../home?showPermissions=1" asChild>
+              <Pressable style={styles.primaryButton}>
+                <ThemedText type="default" style={styles.primaryButtonText}>
+                  Sign In
+                </ThemedText>
+              </Pressable>
+            </Link>
 
             <ThemedText type="small" style={styles.dividerText}>
               or

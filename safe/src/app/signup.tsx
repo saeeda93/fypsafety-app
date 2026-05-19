@@ -93,15 +93,16 @@ export default function SignupScreen() {
               </View>
             </View>
 
-            <Pressable
-              style={[styles.primaryButton, !agree && styles.disabledButton]}
-              onPress={() => router.push('/')}
-              disabled={!agree}
-            >
-              <ThemedText type="default" style={styles.primaryButtonText}>
-                Create Account
-              </ThemedText>
-            </Pressable>
+            <Link href="../home?showPermissions=1" asChild>
+              <Pressable
+                style={[styles.primaryButton, !agree && styles.disabledButton]}
+                disabled={!agree}
+              >
+                <ThemedText type="default" style={styles.primaryButtonText}>
+                  Create Account
+                </ThemedText>
+              </Pressable>
+            </Link>
 
             <ThemedText type="small" style={styles.dividerText}>
               or

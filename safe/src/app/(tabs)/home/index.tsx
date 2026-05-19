@@ -1,0 +1,471 @@
+import { Link, useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Spacing } from '@/constants/theme';
+
+const people = [
+  { name: 'Sarah Mitchell', status: 'Active', distance: '0.3 miles away' },
+  { name: 'James Cooper', status: 'Active', distance: '1.2 miles away' },
+  { name: 'Emily Davis', status: 'Paused', distance: '2.8 miles away' },
+];
+
+const quickActions = [
+  { label: 'Call 911', description: 'Emergency services', color: '#f7d2cf' },
+  { label: 'Hospitals', description: 'Nearby care', color: '#d8e8f4' },
+  { label: 'Police', description: 'Law enforcement', color: '#f6e2db' },
+  { label: 'Contacts', description: 'Trusted circle', color: '#dbe9db' },
+];
+
+const activities = [
+  { title: 'Sarah arrived safely', time: '2 minutes ago' },
+  { title: 'Boundary reminder sent', time: '15 minutes ago' },
+  { title: 'James started tracking you', time: '1 hour ago' },
+];
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const { showPermissions } = useLocalSearchParams();
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (showPermissions === '1') {
+      setModalVisible(true);
+    }
+  }, [showPermissions]);
+
+  return (
+    <ThemedView style={styles.scene}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.headerRow}>
+            <ThemedText type="subtitle">SafeGuard</ThemedText>
+            <Pressable style={styles.iconButton} onPress={() => {}}> 
+              <ThemedText type="default">🔔</ThemedText>
+            </Pressable>
+          </View>
+
+          <View style={styles.statusRow}>
+            <View style={styles.statusPill}>
+              <ThemedText type="smallBold" style={styles.statusPillText}>
+                Location Active
+              </ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.mapCard}>
+            <View style={styles.mapContent}>
+              <View style={styles.mapBadge}>
+                <ThemedText type="default">📍</ThemedText>
+              </View>
+              <ThemedText type="title" style={styles.mapLabel}>
+                Tracking you now
+              </ThemedText>
+            </View>
+            <View style={styles.mapActionRow}>
+              <Pressable style={styles.actionButton} onPress={() => router.push('emergency-services')}>
+                <ThemedText type="default" style={styles.actionText}>
+                  Emergency Alert
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <ThemedText type="subtitle">People Tracking You</ThemedText>
+            <Link href="/home" asChild>
+              <Pressable>
+                <ThemedText type="linkPrimary">View All</ThemedText>
+              </Pressable>
+            </Link>
+          </View>
+          <Modal animationType="fade" transparent visible={modalVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContent}>
+                <ThemedText type="subtitle">Grant Permissions</ThemedText>
+                <ThemedText type="small" style={styles.modalSubtitle} themeColor="textSecondary">
+                  SafeGuard needs these permissions to keep you safe and connected with your trusted contacts.
+                </ThemedText>
+                <View style={styles.permissionCard}>
+                  <View style={styles.permissionIcon}>
+                    <ThemedText type="default">📍</ThemedText>
+                  </View>
+                  <View style={styles.permissionText}>
+                    <ThemedText type="default" style={styles.permissionTitle}>
+                      Location Services
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Required to share your real-time location with trusted contacts and enable emergency tracking features.
+                    </ThemedText>
+                  </View>
+                </View>
+                <View style={styles.permissionCard}>
+                  <View style={styles.permissionIcon}>
+                    <ThemedText type="default">📷</ThemedText>
+                  </View>
+                  <View style={styles.permissionText}>
+                    <ThemedText type="default" style={styles.permissionTitle}>
+                      Camera Access
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Allows you to capture photos during emergencies and share visual information with your safety network.
+                    </ThemedText>
+                  </View>
+                </View>
+                <View style={styles.permissionCard}>
+                  <View style={styles.permissionIcon}>
+                    <ThemedText type="default">🎙️</ThemedText>
+                  </View>
+                  <View style={styles.permissionText}>
+                    <ThemedText type="default" style={styles.permissionTitle}>
+                      Microphone Access
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Enables audio recording of your surroundings when you activate emergency mode for evidence and safety.
+                    </ThemedText>
+                  </View>
+                </View>
+                <View style={styles.permissionCard}>
+                  <View style={styles.permissionIcon}>
+                    <ThemedText type="default">🔔</ThemedText>
+                  </View>
+                  <View style={styles.permissionText}>
+                    <ThemedText type="default" style={styles.permissionTitle}>
+                      Notifications
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Stay informed with alerts from your safety circle and receive immediate notifications during emergencies.
+                    </ThemedText>
+                  </View>
+                </View>
+                <Pressable style={styles.allowButton} onPress={() => setModalVisible(false)}>
+                  <ThemedText type="default" style={styles.allowButtonText}>
+                    Allow Access
+                  </ThemedText>
+                </Pressable>
+                <Pressable style={styles.skipButton} onPress={() => setModalVisible(false)}>
+                  <ThemedText type="linkPrimary">Skip for Now</ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+          <View style={styles.peopleList}>
+            {people.map((person) => (
+              <View key={person.name} style={styles.personCard}>
+                <View style={styles.personAvatar}>
+                  <ThemedText type="default">{person.name[0]}</ThemedText>
+                </View>
+                <View style={styles.personDetails}>
+                  <ThemedText type="default" style={styles.personName}>
+                    {person.name}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {person.distance}
+                  </ThemedText>
+                </View>
+                <View style={[styles.personStatus, person.status === 'Active' ? styles.statusActive : styles.statusPaused]}>
+                  <ThemedText type="smallBold" style={styles.personStatusText}>
+                    {person.status}
+                  </ThemedText>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <ThemedText type="subtitle">Emergency Services</ThemedText>
+          </View>
+          <View style={styles.gridRow}>
+            {quickActions.map((action) => (
+              <View key={action.label} style={[styles.quickCard, { backgroundColor: action.color }]}>
+                <ThemedText type="default" style={styles.quickTitle}>
+                  {action.label}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {action.description}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <ThemedText type="subtitle">Boundary Status</ThemedText>
+          </View>
+          <View style={styles.statusCard}>
+            <View>
+              <ThemedText type="default" style={styles.statusCardTitle}>
+                Safe Zone Active
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                You are within your designated safe boundary.
+              </ThemedText>
+            </View>
+            <View style={styles.boundaryAction}>
+              <ThemedText type="smallBold">Active</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                11:30 PM Tonight
+              </ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <ThemedText type="subtitle">Recent Activity</ThemedText>
+            <ThemedText type="linkPrimary">See All</ThemedText>
+          </View>
+          <View style={styles.activityList}>
+            {activities.map((item) => (
+              <View key={item.title} style={styles.activityCard}>
+                <View style={styles.activityDot} />
+                <View>
+                  <ThemedText type="default" style={styles.activityTitle}>
+                    {item.title}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {item.time}
+                  </ThemedText>
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  scene: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    padding: Spacing.four,
+    gap: Spacing.four,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  statusRow: {
+    alignItems: 'flex-start',
+  },
+  statusPill: {
+    backgroundColor: '#e8f6f4',
+    borderRadius: 20,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+  },
+  statusPillText: {
+    color: '#2f6b5b',
+  },
+  mapCard: {
+    borderRadius: Spacing.four,
+    padding: Spacing.four,
+    backgroundColor: '#dbe9ff',
+    gap: Spacing.four,
+  },
+  mapContent: {
+    gap: Spacing.two,
+  },
+  mapBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapLabel: {
+    maxWidth: 220,
+  },
+  mapActionRow: {
+    alignItems: 'flex-start',
+  },
+  actionButton: {
+    marginTop: Spacing.one,
+    borderRadius: Spacing.five,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    backgroundColor: '#c8554f',
+  },
+  actionText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  peopleList: {
+    gap: Spacing.two,
+  },
+  personCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  personAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: '#fbe6e2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  personDetails: {
+    flex: 1,
+  },
+  personName: {
+    fontWeight: '700',
+  },
+  personStatus: {
+    borderRadius: 16,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+  },
+  statusActive: {
+    backgroundColor: '#e8f6f4',
+  },
+  statusPaused: {
+    backgroundColor: '#f0ebe6',
+  },
+  personStatusText: {
+    color: '#2b2b2b',
+  },
+  gridRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+    justifyContent: 'space-between',
+  },
+  quickCard: {
+    width: '48%',
+    padding: Spacing.three,
+    borderRadius: Spacing.four,
+  },
+  quickTitle: {
+    marginBottom: Spacing.one,
+    fontWeight: '700',
+  },
+  statusCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  statusCardTitle: {
+    fontWeight: '700',
+  },
+  boundaryAction: {
+    alignItems: 'flex-end',
+    gap: Spacing.one,
+  },
+  activityList: {
+    gap: Spacing.two,
+  },
+  activityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  activityDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 6,
+    backgroundColor: '#c8554f',
+  },
+  activityTitle: {
+    fontWeight: '700',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    justifyContent: 'center',
+    padding: Spacing.four,
+  },
+  modalContent: {
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    padding: Spacing.four,
+    gap: Spacing.four,
+  },
+  modalSubtitle: {
+    maxWidth: 300,
+  },
+  permissionCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.three,
+    borderRadius: Spacing.four,
+    padding: Spacing.four,
+    backgroundColor: '#f8f4ef',
+  },
+  permissionIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  permissionText: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  permissionTitle: {
+    fontWeight: '700',
+  },
+  allowButton: {
+    borderRadius: Spacing.five,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+    backgroundColor: '#c8554f',
+  },
+  allowButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  skipButton: {
+    alignItems: 'center',
+    paddingVertical: Spacing.two,
+  },
+});
