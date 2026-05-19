@@ -1,61 +1,49 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
+import React from 'react';
+import { Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
-
-export default function HomeScreen() {
+export default function SplashScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
+        <View style={styles.brandContainer}>
+          <View style={styles.iconShell}>
+            <View style={styles.iconCircle}>
+              <ThemedText type="title" style={styles.iconLabel}>
+                ⛨
+              </ThemedText>
+            </View>
+          </View>
+
           <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
+            You’re Never Alone
           </ThemedText>
-        </ThemedView>
+          <ThemedText type="small" style={styles.subtitle} themeColor="textSecondary">
+            Your safety starts here.
+          </ThemedText>
+        </View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <View style={styles.buttonsContainer}>
+          <Link href="/login" asChild>
+            <Pressable style={styles.primaryButton}>
+              <ThemedText type="default" style={styles.primaryText}>
+                Sign In
+              </ThemedText>
+            </Pressable>
+          </Link>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
+          <Link href="/signup" asChild>
+            <Pressable style={styles.secondaryButton}>
+              <ThemedText type="default" style={styles.secondaryButtonText}>
+                Sign Up
+              </ThemedText>
+            </Pressable>
+          </Link>
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -65,34 +53,72 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    flexDirection: 'row',
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    padding: Spacing.four,
+    justifyContent: 'space-between',
   },
-  heroSection: {
+  brandContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     gap: Spacing.four,
+    marginTop: Spacing.six,
+  },
+  iconShell: {
+    width: 128,
+    height: 128,
+    borderRadius: 72,
+    backgroundColor: '#EAC6B7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  iconCircle: {
+    width: 86,
+    height: 86,
+    borderRadius: 48,
+    backgroundColor: '#F6E2DA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconLabel: {
+    fontSize: 32,
   },
   title: {
     textAlign: 'center',
+    lineHeight: 52,
   },
-  code: {
-    textTransform: 'uppercase',
+  subtitle: {
+    textAlign: 'center',
+    maxWidth: 320,
   },
-  stepContainer: {
+  buttonsContainer: {
     gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
+    marginBottom: Spacing.six,
+  },
+  primaryButton: {
+    borderRadius: Spacing.five,
     paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    backgroundColor: '#c8554f',
+    alignItems: 'center',
+  },
+  primaryText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  secondaryButton: {
+    borderRadius: Spacing.five,
+    paddingVertical: Spacing.four,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#c8554f',
+    backgroundColor: '#fff',
+  },
+  secondaryButtonText: {
+    color: '#000',
+    fontWeight: '700',
   },
 });
