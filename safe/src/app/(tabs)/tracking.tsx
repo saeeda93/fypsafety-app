@@ -12,6 +12,7 @@ export default function TrackingScreen() {
   const [alertsEnabled, setAlertsEnabled] = useState(true);
   const [sliderWidth, setSliderWidth] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [showLocationHistory, setShowLocationHistory] = useState(false);
 
   const incrementRadius = () => setRadius((value) => Math.min(maxRadius, Math.round((value + 0.5) * 10) / 10));
   const decrementRadius = () => setRadius((value) => Math.max(minRadius, Math.round((value - 0.5) * 10) / 10));
@@ -156,6 +157,216 @@ export default function TrackingScreen() {
               Save Boundary
             </ThemedText>
           </Pressable>
+
+          <Pressable 
+            style={styles.locationHistoryButton} 
+            onPress={() => setShowLocationHistory(!showLocationHistory)}
+          >
+            <View style={styles.locationHistoryHeader}>
+              <ThemedText type="default" style={styles.locationHistoryTitle}>
+                Location History
+              </ThemedText>
+              <ThemedText style={styles.locationHistoryChevron}>
+                {showLocationHistory ? '▼' : '▶'}
+              </ThemedText>
+            </View>
+          </Pressable>
+
+          {showLocationHistory && (
+            <View style={styles.locationHistoryContent}>
+              <View style={styles.dateSelector}>
+                <Pressable>
+                  <ThemedText style={styles.dateArrow}>‹</ThemedText>
+                </Pressable>
+                <ThemedText type="default" style={styles.dateText}>
+                  Today, March 14
+                </ThemedText>
+                <Pressable>
+                  <ThemedText style={styles.dateArrow}>›</ThemedText>
+                </Pressable>
+              </View>
+
+              <ScrollView style={styles.locationsList} nestedScrollEnabled>
+                <View style={styles.locationItem}>
+                  <View style={styles.locationIcon}>
+                    <ThemedText>📍</ThemedText>
+                  </View>
+                  <View style={styles.locationInfo}>
+                    <ThemedText type="default" style={styles.locationName}>
+                      Central Park
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      New York, NY 10024
+                    </ThemedText>
+                    <View style={styles.locationMeta}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        ● Safe location
+                      </ThemedText>
+                    </View>
+                    <View style={styles.trackedByGroup}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        tracked by:
+                      </ThemedText>
+                      <View style={styles.avatarGroup}>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>S</ThemedText>
+                        </View>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>M</ThemedText>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    3:45 PM
+                  </ThemedText>
+                </View>
+
+                <View style={styles.locationItem}>
+                  <View style={styles.locationIcon}>
+                    <ThemedText>📍</ThemedText>
+                  </View>
+                  <View style={styles.locationInfo}>
+                    <ThemedText type="default" style={styles.locationName}>
+                      Starbucks Coffee
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      585 Broadway, New York, NY
+                    </ThemedText>
+                    <View style={styles.locationMeta}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        ● Safe location
+                      </ThemedText>
+                    </View>
+                    <View style={styles.trackedByGroup}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        tracked by:
+                      </ThemedText>
+                      <View style={styles.avatarGroup}>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>S</ThemedText>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    2:20 PM
+                  </ThemedText>
+                </View>
+
+                <View style={styles.locationItem}>
+                  <View style={styles.locationIcon}>
+                    <ThemedText>📍</ThemedText>
+                  </View>
+                  <View style={styles.locationInfo}>
+                    <ThemedText type="default" style={styles.locationName}>
+                      Penn Station
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      4 Pennsylvania Plaza, New York, NY
+                    </ThemedText>
+                    <View style={styles.locationMeta}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        ● Transit location
+                      </ThemedText>
+                    </View>
+                    <View style={styles.trackedByGroup}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        tracked by:
+                      </ThemedText>
+                      <View style={styles.avatarGroup}>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>S</ThemedText>
+                        </View>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>M</ThemedText>
+                        </View>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>E</ThemedText>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    1:15 PM
+                  </ThemedText>
+                </View>
+
+                <View style={styles.locationItem}>
+                  <View style={styles.locationIcon}>
+                    <ThemedText>🏠</ThemedText>
+                  </View>
+                  <View style={styles.locationInfo}>
+                    <ThemedText type="default" style={styles.locationName}>
+                      Home
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Brooklyn, NY 10001
+                    </ThemedText>
+                    <View style={styles.locationMeta}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        ● Safe location
+                      </ThemedText>
+                    </View>
+                    <View style={styles.trackedByGroup}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        tracked by:
+                      </ThemedText>
+                      <View style={styles.avatarGroup}>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>M</ThemedText>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    11:30 AM
+                  </ThemedText>
+                </View>
+
+                <View style={styles.locationItem}>
+                  <View style={styles.locationIcon}>
+                    <ThemedText>📍</ThemedText>
+                  </View>
+                  <View style={styles.locationInfo}>
+                    <ThemedText type="default" style={styles.locationName}>
+                      Whole Foods Market
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      242 3rd St, Brooklyn, NY
+                    </ThemedText>
+                    <View style={styles.locationMeta}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        ● Safe location
+                      </ThemedText>
+                    </View>
+                    <View style={styles.trackedByGroup}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        tracked by:
+                      </ThemedText>
+                      <View style={styles.avatarGroup}>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>M</ThemedText>
+                        </View>
+                        <View style={styles.avatar}>
+                          <ThemedText style={styles.avatarText}>E</ThemedText>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    10:45 AM
+                  </ThemedText>
+                </View>
+              </ScrollView>
+
+              <Pressable style={styles.loadEarlierButton}>
+                <ThemedText style={styles.loadEarlierText}>
+                  Load Earlier Locations
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -315,5 +526,118 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontWeight: '700',
+  },
+  locationHistoryButton: {
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  locationHistoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  locationHistoryTitle: {
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  locationHistoryChevron: {
+    fontSize: 12,
+    color: '#c8554f',
+  },
+  locationHistoryContent: {
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  dateSelector: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f2f4f7',
+  },
+  dateArrow: {
+    fontSize: 18,
+    paddingHorizontal: Spacing.two,
+    color: '#c8554f',
+  },
+  dateText: {
+    fontWeight: '600',
+    marginHorizontal: Spacing.three,
+  },
+  locationsList: {
+    maxHeight: 400,
+    paddingHorizontal: Spacing.four,
+  },
+  locationItem: {
+    flexDirection: 'row',
+    paddingVertical: Spacing.three,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f2f4f7',
+    gap: Spacing.three,
+    alignItems: 'flex-start',
+  },
+  locationIcon: {
+    fontSize: 24,
+    marginTop: 2,
+  },
+  locationInfo: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  locationName: {
+    fontWeight: '600',
+  },
+  locationMeta: {
+    marginTop: Spacing.one,
+  },
+  trackedByGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  avatarGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: -8,
+  },
+  avatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#c8554f',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  loadEarlierButton: {
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f9ede7',
+    borderTopWidth: 1,
+    borderTopColor: '#f2f4f7',
+  },
+  loadEarlierText: {
+    color: '#c8554f',
+    fontWeight: '600',
   },
 });
