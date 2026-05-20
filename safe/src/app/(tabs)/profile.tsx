@@ -24,6 +24,9 @@ export default function ProfileScreen() {
   const [newContactCode, setNewContactCode] = useState('');
   const [newContactRole, setNewContactRole] = useState('');
   const [contactStatusMessage, setContactStatusMessage] = useState('');
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
+  const [privacyVisible, setPrivacyVisible] = useState(false);
+  const [helpVisible, setHelpVisible] = useState(false);
 
   const handleAddContact = () => {
     const result = addContactByCode(newContactCode, newContactRole.trim() || 'Trusted Contact');
@@ -41,6 +44,10 @@ export default function ProfileScreen() {
     setDraftEmail(user.email);
     setDraftPhone(user.phone);
   }, [user.name, user.email, user.phone]);
+
+  const handleOpenNotifications = () => setNotificationsVisible(true);
+  const handleOpenPrivacy = () => setPrivacyVisible(true);
+  const handleOpenHelp = () => setHelpVisible(true);
 
   const defaultCenter = { latitude: 37.7749, longitude: -122.4194 };
   const mapCenter = location?.coords ?? defaultCenter;
