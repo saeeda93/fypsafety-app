@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import ActualMap from '@/components/actual-map';
@@ -55,20 +55,25 @@ const sampleDependants = [
 export default function DependantsScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewAllVisible, setViewAllVisible] = useState(false);
   const { user } = useUser();
 
   const incomingContacts = user.incomingContacts ?? [];
+  const activeContacts = useMemo(
+    () => incomingContacts.filter((contact) => contact.status === 'Online'),
+    [incomingContacts]
+  );
   const dependants = useMemo(
     () =>
-      incomingContacts.map((contact, index) => ({
+      activeContacts.map((contact) => ({
         id: contact.contactCode,
         name: contact.name,
-        location: contact.status === 'Online' ? 'Last seen nearby' : 'Last seen earlier',
+        location: 'Last seen nearby',
         status: contact.status,
-        time: contact.status === 'Online' ? 'Live' : 'Offline',
+        time: 'Live',
         avatar: contact.name[0],
       })),
-    [incomingContacts]
+    [activeContacts]
   );
 
   const filteredDependants = dependants.filter((person) =>
@@ -120,7 +125,7 @@ export default function DependantsScreen() {
           <View style={styles.trackingInfoCard}>
             <View style={styles.trackingInfo}>
               <ThemedText type="smallBold" style={styles.trackingLabel}>
-                Tracking you
+                Currently tracking
               </ThemedText>
               <ThemedText type="subtitle" style={styles.trackingCount}>
                 {filteredDependants.length} people
@@ -209,7 +214,7 @@ export default function DependantsScreen() {
               Quick Actions
             </ThemedText>
             <View style={styles.quickActionsGrid}>
-              <Pressable style={styles.quickActionButton}>
+              <Pressable style={styles.quickActionButton} onPress={() => setViewAllVisible(true)}>
                 <ThemedText style={styles.quickActionIcon}>👥</ThemedText>
                 <ThemedText type="small" style={styles.quickActionLabel}>
                   View All
@@ -223,6 +228,44 @@ export default function DependantsScreen() {
               </Pressable>
             </View>
           </View>
+          <Modal animationType="slide" transparent visible={viewAllVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalHeader}>
+                  <ThemedText type="subtitle">View All Contacts</ThemedText>
+                  <Pressable style={styles.closeButton} onPress={() => setViewAllVisible(false)}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <ScrollView contentContainerStyle={styles.modalContent}>
+                  {incomingContacts.length === 0 ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      No contacts have added you yet.
+                    </ThemedText>
+                  ) : (
+                    incomingContacts.map((contact) => (
+                      <View key={contact.contactCode} style={styles.contactRowModal}>
+                        <View style={styles.contactAvatar}>
+                          <ThemedText type="default">{contact.name[0]}</ThemedText>
+                        </View>
+                        <View style={styles.contactInfo}>
+                          <ThemedText type="default" style={styles.contactName}>
+                            {contact.name}
+                          </ThemedText>
+                          <ThemedText type="small" themeColor="textSecondary">
+                            {contact.role} • {contact.status}
+                          </ThemedText>
+                          <ThemedText type="small" themeColor="textSecondary">
+                            Code: {contact.contactCode}
+                          </ThemedText>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -441,6 +484,43 @@ const styles = StyleSheet.create({
   quickActionLabel: {
     fontWeight: '600',
     fontSize: 12,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: Spacing.four,
+    borderTopRightRadius: Spacing.four,
+    padding: Spacing.four,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.two,
+  },
+  modalContent: {
+    gap: Spacing.two,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f2f4f7',
+  },
+  contactRowModal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.four,
+    paddingVertical: Spacing.two,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f2f3f5',
   },
   mapStatusRow: {
     flexDirection: 'row',

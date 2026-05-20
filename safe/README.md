@@ -62,6 +62,4 @@ Join our community of developers creating universal apps.
 
 //////
 do the map functionality
-users should be on the application and track each other from there
 manage alerts and other stuff on profile hould be functional
-on the dependants page, it should show other contacts that have allowed tracking in the past even if they aren't currently active
