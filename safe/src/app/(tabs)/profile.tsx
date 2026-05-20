@@ -10,21 +10,31 @@ import { ThemedView } from '@/components/themed-view';
 import { useThemeMode } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
 
-const trustedContacts = [
-  { name: 'Mom', role: 'Emergency Contact', status: 'Active' },
-  { name: 'Alex', role: 'Partner', status: 'Active' },
-];
-
 export default function ProfileScreen() {
   const router = useRouter();
   const { mode, toggleTheme } = useThemeMode();
   const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
-  const { user, setUser } = useUser();
+  const { user, setUser, addContactByCode } = useUser();
+  const contacts = user.contacts ?? [];
 
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(user.name);
   const [draftEmail, setDraftEmail] = useState(user.email);
   const [draftPhone, setDraftPhone] = useState(user.phone);
+  const [newContactCode, setNewContactCode] = useState('');
+  const [newContactRole, setNewContactRole] = useState('');
+  const [contactStatusMessage, setContactStatusMessage] = useState('');
+
+  const handleAddContact = () => {
+    const result = addContactByCode(newContactCode, newContactRole.trim() || 'Trusted Contact');
+
+    setContactStatusMessage(result.message);
+
+    if (result.success) {
+      setNewContactCode('');
+      setNewContactRole('');
+    }
+  };
 
   useEffect(() => {
     setDraftName(user.name);
@@ -114,6 +124,9 @@ export default function ProfileScreen() {
                     <ThemedText type="small" themeColor="textSecondary">
                       {user.phone}
                     </ThemedText>
+                    <ThemedText type="smallBold" themeColor="textSecondary" style={styles.userCode}>
+                      My code: {user.uniqueCode}
+                    </ThemedText>
                   </>
                 )}
               </View>
@@ -124,6 +137,7 @@ export default function ProfileScreen() {
                       style={[styles.controlButton, styles.saveButton]}
                       onPress={() => {
                         setUser({
+                          ...user,
                           name: draftName.trim() || 'SafeGuard User',
                           email: draftEmail.trim() || 'user@safe.io',
                           phone: draftPhone.trim() || '+1 (555) 000-0000',
@@ -219,29 +233,58 @@ export default function ProfileScreen() {
                 Trusted Contacts
               </ThemedText>
             </View>
-            {trustedContacts.map((contact) => (
-              <View key={contact.name} style={styles.contactRow}>
-                <View style={styles.contactAvatar}>
-                  <ThemedText type="default">{contact.name[0]}</ThemedText>
-                </View>
-                <View style={styles.contactInfo}>
-                  <ThemedText type="default" style={styles.contactName}>
-                    {contact.name}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {contact.role}
-                  </ThemedText>
-                </View>
-                <ThemedText type="smallBold" style={styles.contactStatus}>
-                  {contact.status}
-                </ThemedText>
-              </View>
-            ))}
-            <Pressable style={styles.addContactButton}>
-              <ThemedText type="default" style={styles.addContactText}>
-                + Add Trusted Contact
+            {contacts.length === 0 ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                No contacts added yet. Add one below to keep your safety circle updated.
               </ThemedText>
-            </Pressable>
+            ) : (
+              contacts.map((contact) => (
+                <View key={contact.id} style={styles.contactRow}>
+                  <View style={styles.contactAvatar}>
+                    <ThemedText type="default">{contact.name[0]}</ThemedText>
+                  </View>
+                  <View style={styles.contactInfo}>
+                    <ThemedText type="default" style={styles.contactName}>
+                      {contact.name}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {contact.role}
+                    </ThemedText>
+                  </View>
+                  <ThemedText type="smallBold" style={styles.contactStatus}>
+                    {contact.status}
+                  </ThemedText>
+                </View>
+              ))
+            )}
+            <View style={styles.addContactForm}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Enter the unique app code for a registered contact.
+              </ThemedText>
+              <TextInput
+                style={styles.profileInput}
+                placeholder="Contact code (e.g. MG1234)"
+                value={newContactCode}
+                onChangeText={setNewContactCode}
+                autoCapitalize="characters"
+              />
+              <TextInput
+                style={styles.profileInput}
+                placeholder="Relationship"
+                value={newContactRole}
+                onChangeText={setNewContactRole}
+              />
+              <Pressable style={[styles.controlButton, styles.saveButton]} onPress={handleAddContact}>
+                <ThemedText type="default" style={styles.saveButtonText}>
+                  Add Contact
+                </ThemedText>
+              </Pressable>
+              {contactStatusMessage ? (
+                <ThemedText type="small" themeColor="textSecondary" style={styles.contactMessage}>
+                  {contactStatusMessage}
+                </ThemedText>
+              ) : null}
+            </View>
           </View>
 
           <View style={styles.sectionCard}>
@@ -342,6 +385,10 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontWeight: '700',
+  },
+  userCode: {
+    marginTop: Spacing.one,
+    color: '#6f7988',
   },
   editButton: {
     width: 40,
@@ -497,6 +544,17 @@ const styles = StyleSheet.create({
   },
   contactStatus: {
     color: '#2f6b5b',
+  },
+  addContactForm: {
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  fieldRow: {
+    gap: Spacing.two,
+  },
+  contactMessage: {
+    marginTop: Spacing.two,
+    color: '#6f7988',
   },
   addContactButton: {
     marginTop: Spacing.two,

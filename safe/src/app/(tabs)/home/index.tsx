@@ -5,6 +5,7 @@ import ActualMap from '@/components/actual-map';
 import { AppLogo } from '@/components/app-logo';
 import { ThemedText } from '@/components/themed-text';
 import { useLocationSharing } from '@/hooks/use-location';
+import { useUser } from '@/hooks/use-user';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 
@@ -53,7 +54,17 @@ export default function HomeScreen() {
   const { showPermissions } = useLocalSearchParams();
   const [modalVisible, setModalVisible] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [contactsVisible, setContactsVisible] = useState(false);
+  const { user } = useUser();
+  const contacts = user.contacts ?? [];
   const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
+
+  const quickActions = [
+    { label: 'Call 911', description: 'Emergency services', color: '#f7d2cf', onPress: () => {} },
+    { label: 'Hospitals', description: 'Nearby care', color: '#d8e8f4', onPress: () => {} },
+    { label: 'Police', description: 'Law enforcement', color: '#f6e2db', onPress: () => {} },
+    { label: 'Contacts', description: 'Trusted circle', color: '#dbe9db', onPress: () => setContactsVisible(true) },
+  ];
 
   const defaultCenter = { latitude: 37.7749, longitude: -122.4194 };
   const mapCenter = location?.coords ?? defaultCenter;
@@ -249,6 +260,52 @@ export default function HomeScreen() {
               </View>
             </View>
           </Modal>
+          <Modal animationType="fade" transparent visible={contactsVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeaderRow}>
+                  <ThemedText type="subtitle">Trusted Contacts</ThemedText>
+                  <Pressable onPress={() => setContactsVisible(false)} style={styles.closeButton}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary">
+                  See all contacts you’ve added from your profile page.
+                </ThemedText>
+                <View style={styles.contactList}>
+                  {contacts.length === 0 ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      No trusted contacts added yet.
+                    </ThemedText>
+                  ) : (
+                    contacts.map((contact) => (
+                      <View key={contact.id} style={styles.contactRow}>
+                        <View style={styles.contactAvatar}>
+                          <ThemedText type="default">{contact.name[0]}</ThemedText>
+                        </View>
+                        <View style={styles.contactInfo}>
+                          <ThemedText type="default" style={styles.contactName}>
+                            {contact.name}
+                          </ThemedText>
+                          <ThemedText type="small" themeColor="textSecondary">
+                            {contact.role}
+                          </ThemedText>
+                        </View>
+                        <ThemedText type="smallBold" style={styles.contactStatus}>
+                          {contact.status}
+                        </ThemedText>
+                      </View>
+                    ))
+                  )}
+                </View>
+                <Pressable style={styles.allowButton} onPress={() => setContactsVisible(false)}>
+                  <ThemedText type="default" style={styles.allowButtonText}>
+                    Close
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
           <View style={styles.peopleList}>
             {people.map((person) => (
               <View key={person.name} style={styles.personCard}>
@@ -277,14 +334,14 @@ export default function HomeScreen() {
           </View>
           <View style={styles.gridRow}>
             {quickActions.map((action) => (
-              <View key={action.label} style={[styles.quickCard, { backgroundColor: action.color }]}>
+              <Pressable key={action.label} onPress={action.onPress} style={[styles.quickCard, { backgroundColor: action.color }]}> 
                 <ThemedText type="default" style={styles.quickTitle}>
                   {action.label}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {action.description}
                 </ThemedText>
-              </View>
+              </Pressable>
             ))}
           </View>
 
@@ -678,5 +735,35 @@ const styles = StyleSheet.create({
   },
   notificationTime: {
     color: '#6f7988',
+  },
+  contactList: {
+    gap: Spacing.two,
+    marginTop: Spacing.three,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Spacing.four,
+    backgroundColor: '#f8f8fb',
+  },
+  contactAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#e7f4f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactInfo: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  contactName: {
+    fontWeight: '700',
+  },
+  contactStatus: {
+    color: '#2f6b5b',
   },
 });

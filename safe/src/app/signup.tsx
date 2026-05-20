@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/theme';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { setUser } = useUser();
+  const { registerUser } = useUser();
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -21,7 +21,7 @@ export default function SignupScreen() {
       return;
     }
 
-    setUser({
+    registerUser({
       name: fullName.trim() || 'SafeGuard User',
       email: email.trim() || 'user@safe.io',
       phone: phone.trim() || '+1 (555) 000-0000',

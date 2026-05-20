@@ -69,3 +69,4 @@ change police to 191, not 911
 contacts should open a page of added contacts
 allow user to add contacts....contacts added should also be on the app
 manage alerts and other stuff on profile hould be functional
+on the dependants page, it should show other contacts that have allowed tracking in the past even if they aren't currently active
