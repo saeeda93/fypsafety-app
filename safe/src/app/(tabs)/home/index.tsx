@@ -21,7 +21,7 @@ const activities = [
   { title: 'James started tracking you', time: '1 hour ago' },
 ];
 
-const notifications = [
+const defaultNotifications = [
   {
     title: 'Emergency Alert',
     description: 'Sarah Mitchell requested help nearby.',
@@ -48,6 +48,10 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [contactsVisible, setContactsVisible] = useState(false);
+  const [selectContactsVisible, setSelectContactsVisible] = useState(false);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState(defaultNotifications);
+  const [alertStatusMessage, setAlertStatusMessage] = useState<string | null>(null);
   const { user } = useUser();
   const contacts = user.contacts ?? [];
   const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
@@ -66,6 +70,50 @@ export default function HomeScreen() {
     longitude: mapCenter.longitude,
     latitudeDelta: 0.02,
     longitudeDelta: 0.02,
+  };
+
+  const toggleSelectedContact = (contactId: string) => {
+    setSelectedContacts((current) =>
+      current.includes(contactId) ? current.filter((id) => id !== contactId) : [...current, contactId]
+    );
+  };
+
+  const handleSendLocationAlert = () => {
+    if (selectedContacts.length === 0) {
+      setAlertStatusMessage('Select at least one contact to notify.');
+      return;
+    }
+
+    setNotifications((current) => [
+      {
+        title: 'Location Alert',
+        description: `Your current location was shared with ${selectedContacts.length} ${selectedContacts.length === 1 ? 'contact' : 'contacts'}.`,
+        time: 'Now',
+        type: 'emergency',
+      },
+      ...current,
+    ]);
+    setAlertStatusMessage(`Location shared with ${selectedContacts.length} ${selectedContacts.length === 1 ? 'contact' : 'contacts'}.`);
+    setSelectedContacts([]);
+    setSelectContactsVisible(false);
+  };
+
+  const handleSendUrgentAll = () => {
+    if (contacts.length === 0) {
+      setAlertStatusMessage('Add contacts first to send an urgent alert.');
+      return;
+    }
+
+    setNotifications((current) => [
+      {
+        title: 'Urgent',
+        description: `Urgent alert sent to all ${contacts.length} trusted contact${contacts.length === 1 ? '' : 's'}.`,
+        time: 'Now',
+        type: 'emergency',
+      },
+      ...current,
+    ]);
+    setAlertStatusMessage(`Urgent alert sent to all ${contacts.length} trusted contacts.`);
   };
 
   useEffect(() => {
@@ -137,6 +185,23 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
             )}
+            <View style={styles.alertActionRow}>
+              <Pressable style={styles.alertActionButton} onPress={() => setSelectContactsVisible(true)}>
+                <ThemedText type="default" style={styles.alertActionText}>
+                  Alert
+                </ThemedText>
+              </Pressable>
+              <Pressable style={[styles.alertActionButton, styles.alertAllButton]} onPress={handleSendUrgentAll}>
+                <ThemedText type="default" style={styles.alertActionText}>
+                  Alert All
+                </ThemedText>
+              </Pressable>
+            </View>
+            {alertStatusMessage ? (
+              <ThemedText type="small" themeColor="textSecondary" style={styles.alertStatusText}>
+                {alertStatusMessage}
+              </ThemedText>
+            ) : null}
           </View>
 
           <View style={styles.sectionHeader}>
@@ -250,6 +315,62 @@ export default function HomeScreen() {
                     </View>
                   ))}
                 </View>
+              </View>
+            </View>
+          </Modal>
+          <Modal animationType="fade" transparent visible={selectContactsVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeaderRow}>
+                  <ThemedText type="subtitle">Alert Contacts</ThemedText>
+                  <Pressable onPress={() => setSelectContactsVisible(false)} style={styles.closeButton}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Select the trusted contacts you want to notify with your current location.
+                </ThemedText>
+                <View style={styles.contactList}>
+                  {contacts.length === 0 ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      No contacts added yet.
+                    </ThemedText>
+                  ) : (
+                    contacts.map((contact) => {
+                      const selected = selectedContacts.includes(contact.contactCode);
+                      return (
+                        <Pressable
+                          key={contact.contactCode}
+                          style={[styles.contactRow, selected && styles.contactRowSelected]}
+                          onPress={() => toggleSelectedContact(contact.contactCode)}
+                        >
+                          <View style={styles.contactAvatar}>
+                            <ThemedText type="default">{contact.name[0]}</ThemedText>
+                          </View>
+                          <View style={styles.contactInfo}>
+                            <ThemedText type="default" style={styles.contactName}>
+                              {contact.name}
+                            </ThemedText>
+                            <ThemedText type="small" themeColor="textSecondary">
+                              {contact.role}
+                            </ThemedText>
+                          </View>
+                          <ThemedText type="small" themeColor="textSecondary">
+                            {selected ? 'Selected' : 'Tap to select'}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })
+                  )}
+                </View>
+                <Pressable style={styles.allowButton} onPress={handleSendLocationAlert}>
+                  <ThemedText type="default" style={styles.allowButtonText}>
+                    Send Location Alert
+                  </ThemedText>
+                </Pressable>
+                <Pressable style={styles.skipButton} onPress={() => setSelectContactsVisible(false)}>
+                  <ThemedText type="linkPrimary">Cancel</ThemedText>
+                </Pressable>
               </View>
             </View>
           </Modal>
@@ -504,6 +625,28 @@ const styles = StyleSheet.create({
   mapLabel: {
     maxWidth: 220,
   },
+  alertActionRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    marginTop: Spacing.two,
+  },
+  alertActionButton: {
+    flex: 1,
+    borderRadius: Spacing.five,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+    backgroundColor: '#c8554f',
+  },
+  alertAllButton: {
+    backgroundColor: '#7f1d1d',
+  },
+  alertActionText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  alertStatusText: {
+    marginTop: Spacing.two,
+  },
   mapActionRow: {
     alignItems: 'flex-start',
   },
@@ -740,6 +883,11 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Spacing.four,
     backgroundColor: '#f8f8fb',
+  },
+  contactRowSelected: {
+    backgroundColor: '#e8f6f4',
+    borderWidth: 1,
+    borderColor: '#c8e8dd',
   },
   contactAvatar: {
     width: 42,
