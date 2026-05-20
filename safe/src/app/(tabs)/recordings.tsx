@@ -56,9 +56,24 @@ export default function DependantsScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewAllVisible, setViewAllVisible] = useState(false);
+  const [alertsVisible, setAlertsVisible] = useState(false);
   const { user } = useUser();
 
   const incomingContacts = user.incomingContacts ?? [];
+  const dependantAlerts = useMemo(
+    () =>
+      incomingContacts.map((contact) => ({
+        id: `${contact.contactCode}-alert`,
+        contactCode: contact.contactCode,
+        name: contact.name,
+        message:
+          contact.status === 'Online'
+            ? `${contact.name} sent a live check-in request.`
+            : `${contact.name} sent an alert message.`,
+        time: contact.status === 'Online' ? 'Just now' : '15 min ago',
+      })),
+    [incomingContacts]
+  );
   const activeContacts = useMemo(
     () => incomingContacts.filter((contact) => contact.status === 'Online'),
     [incomingContacts]
@@ -220,7 +235,7 @@ export default function DependantsScreen() {
                   View All
                 </ThemedText>
               </Pressable>
-              <Pressable style={styles.quickActionButton}>
+              <Pressable style={styles.quickActionButton} onPress={() => setAlertsVisible(true)}>
                 <ThemedText style={styles.quickActionIcon}>🚨</ThemedText>
                 <ThemedText type="small" style={styles.quickActionLabel}>
                   Alerts
@@ -259,6 +274,44 @@ export default function DependantsScreen() {
                             Code: {contact.contactCode}
                           </ThemedText>
                         </View>
+                      </View>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
+          <Modal animationType="slide" transparent visible={alertsVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalHeader}>
+                  <ThemedText type="subtitle">Dependants Alerts</ThemedText>
+                  <Pressable style={styles.closeButton} onPress={() => setAlertsVisible(false)}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <ScrollView contentContainerStyle={styles.modalContent}>
+                  {dependantAlerts.length === 0 ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      No alerts have been sent by your dependants yet.
+                    </ThemedText>
+                  ) : (
+                    dependantAlerts.map((alert) => (
+                      <View key={alert.id} style={styles.contactRowModal}>
+                        <View style={styles.contactAvatar}>
+                          <ThemedText type="default">{alert.name[0]}</ThemedText>
+                        </View>
+                        <View style={styles.contactInfo}>
+                          <ThemedText type="default" style={styles.contactName}>
+                            {alert.name}
+                          </ThemedText>
+                          <ThemedText type="small" themeColor="textSecondary">
+                            {alert.message}
+                          </ThemedText>
+                        </View>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {alert.time}
+                        </ThemedText>
                       </View>
                     ))
                   )}
@@ -521,6 +574,21 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     borderBottomWidth: 1,
     borderBottomColor: '#f2f3f5',
+  },
+  contactAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f2f4f7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactInfo: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  contactName: {
+    fontWeight: '600',
   },
   mapStatusRow: {
     flexDirection: 'row',
