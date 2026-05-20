@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import ActualMap from '@/components/actual-map';
+import ActualMap from '../../components/actual-map';
 
 import { useLocationSharing } from '@/hooks/use-location';
 import { useUser } from '@/hooks/use-user';

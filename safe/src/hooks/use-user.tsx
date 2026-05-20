@@ -16,6 +16,7 @@ export type UserInfo = {
   phone: string;
   uniqueCode: string;
   contacts: ContactInfo[];
+  incomingContacts: ContactInfo[];
 };
 
 export type NewUserInfo = {
@@ -30,6 +31,26 @@ const defaultUserInfo: UserInfo = {
   phone: '+1 (555) 000-0000',
   uniqueCode: 'SG0000',
   contacts: [],
+  incomingContacts: [
+    {
+      id: 'MG1234',
+      contactCode: 'MG1234',
+      name: 'Maya Grant',
+      role: 'Trusted Contact',
+      status: 'Offline',
+      email: 'maya.grant@safe.io',
+      phone: '+1 (555) 111-2222',
+    },
+    {
+      id: 'AL4321',
+      contactCode: 'AL4321',
+      name: 'Alex Lee',
+      role: 'Trusted Contact',
+      status: 'Online',
+      email: 'alex.lee@safe.io',
+      phone: '+1 (555) 333-4444',
+    },
+  ],
 };
 
 const sampleRegisteredUsers: Record<string, UserInfo> = {
@@ -39,6 +60,7 @@ const sampleRegisteredUsers: Record<string, UserInfo> = {
     phone: '+1 (555) 111-2222',
     uniqueCode: 'MG1234',
     contacts: [],
+    incomingContacts: [],
   },
   AL4321: {
     name: 'Alex Lee',
@@ -46,6 +68,7 @@ const sampleRegisteredUsers: Record<string, UserInfo> = {
     phone: '+1 (555) 333-4444',
     uniqueCode: 'AL4321',
     contacts: [],
+    incomingContacts: [],
   },
 };
 
@@ -87,6 +110,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       ...userInfo,
       uniqueCode,
       contacts: [],
+      incomingContacts: [
+        {
+          id: 'MG1234',
+          contactCode: 'MG1234',
+          name: 'Maya Grant',
+          role: 'Trusted Contact',
+          status: 'Offline',
+          email: 'maya.grant@safe.io',
+          phone: '+1 (555) 111-2222',
+        },
+        {
+          id: 'AL4321',
+          contactCode: 'AL4321',
+          name: 'Alex Lee',
+          role: 'Trusted Contact',
+          status: 'Online',
+          email: 'alex.lee@safe.io',
+          phone: '+1 (555) 333-4444',
+        },
+      ],
     };
 
     setRegisteredUsers((current) => ({
@@ -150,6 +193,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       ...userInfo,
       uniqueCode: userInfo.uniqueCode ?? defaultUserInfo.uniqueCode,
       contacts: userInfo.contacts ?? defaultUserInfo.contacts,
+      incomingContacts: userInfo.incomingContacts ?? defaultUserInfo.incomingContacts,
     });
   }, []);
 

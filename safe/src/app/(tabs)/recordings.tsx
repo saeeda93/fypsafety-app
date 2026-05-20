@@ -4,11 +4,12 @@ import { useRouter } from 'expo-router';
 
 import ActualMap from '@/components/actual-map';
 import { useLocationSharing } from '@/hooks/use-location';
+import { useUser } from '@/hooks/use-user';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 
-const dependants = [
+const sampleDependants = [
   {
     id: 1,
     name: 'Emma Wilson',
@@ -54,6 +55,21 @@ const dependants = [
 export default function DependantsScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useUser();
+
+  const incomingContacts = user.incomingContacts ?? [];
+  const dependants = useMemo(
+    () =>
+      incomingContacts.map((contact, index) => ({
+        id: contact.contactCode,
+        name: contact.name,
+        location: contact.status === 'Online' ? 'Last seen nearby' : 'Last seen earlier',
+        status: contact.status,
+        time: contact.status === 'Online' ? 'Live' : 'Offline',
+        avatar: contact.name[0],
+      })),
+    [incomingContacts]
+  );
 
   const filteredDependants = dependants.filter((person) =>
     person.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -104,7 +120,7 @@ export default function DependantsScreen() {
           <View style={styles.trackingInfoCard}>
             <View style={styles.trackingInfo}>
               <ThemedText type="smallBold" style={styles.trackingLabel}>
-                Currently tracking
+                Tracking you
               </ThemedText>
               <ThemedText type="subtitle" style={styles.trackingCount}>
                 {filteredDependants.length} people

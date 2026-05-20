@@ -1,7 +1,7 @@
 import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
-import ActualMap from '@/components/actual-map';
+import ActualMap from '../../../components/actual-map';
 import { AppLogo } from '@/components/app-logo';
 import { ThemedText } from '@/components/themed-text';
 import { useLocationSharing } from '@/hooks/use-location';
@@ -13,13 +13,6 @@ const people = [
   { name: 'Sarah Mitchell', status: 'Active', distance: '0.3 miles away' },
   { name: 'James Cooper', status: 'Active', distance: '1.2 miles away' },
   { name: 'Emily Davis', status: 'Paused', distance: '2.8 miles away' },
-];
-
-const quickActions = [
-  { label: 'Call 911', description: 'Emergency services', color: '#f7d2cf' },
-  { label: 'Hospitals', description: 'Nearby care', color: '#d8e8f4' },
-  { label: 'Police', description: 'Law enforcement', color: '#f6e2db' },
-  { label: 'Contacts', description: 'Trusted circle', color: '#dbe9db' },
 ];
 
 const activities = [
@@ -60,9 +53,9 @@ export default function HomeScreen() {
   const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
 
   const quickActions = [
-    { label: 'Call 911', description: 'Emergency services', color: '#f7d2cf', onPress: () => {} },
-    { label: 'Hospitals', description: 'Nearby care', color: '#d8e8f4', onPress: () => {} },
-    { label: 'Police', description: 'Law enforcement', color: '#f6e2db', onPress: () => {} },
+    { label: 'Fire Service', description: 'Call 192', color: '#f7d2cf', onPress: () => {} },
+    { label: 'Ambulance', description: 'Call 193', color: '#d8e8f4', onPress: () => {} },
+    { label: 'Police', description: 'Call 191', color: '#f6e2db', onPress: () => {} },
     { label: 'Contacts', description: 'Trusted circle', color: '#dbe9db', onPress: () => setContactsVisible(true) },
   ];
 
