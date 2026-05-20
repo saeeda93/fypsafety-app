@@ -2,17 +2,33 @@ import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
+import { useUser } from '@/hooks/use-user';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { setUser } = useUser();
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agree, setAgree] = useState(false);
+
+  const handleCreateAccount = () => {
+    if (!agree) {
+      return;
+    }
+
+    setUser({
+      name: fullName.trim() || 'SafeGuard User',
+      email: email.trim() || 'user@safe.io',
+      phone: phone.trim() || '+1 (555) 000-0000',
+    });
+
+    router.replace('/home?showPermissions=1');
+  };
 
   return (
     <ThemedView style={styles.scene}>
@@ -93,16 +109,15 @@ export default function SignupScreen() {
               </View>
             </View>
 
-            <Link href="../home?showPermissions=1" asChild>
-              <Pressable
-                style={[styles.primaryButton, !agree && styles.disabledButton]}
-                disabled={!agree}
-              >
-                <ThemedText type="default" style={styles.primaryButtonText}>
-                  Create Account
-                </ThemedText>
-              </Pressable>
-            </Link>
+            <Pressable
+              style={[styles.primaryButton, !agree && styles.disabledButton]}
+              disabled={!agree}
+              onPress={handleCreateAccount}
+            >
+              <ThemedText type="default" style={styles.primaryButtonText}>
+                Create Account
+              </ThemedText>
+            </Pressable>
 
             <ThemedText type="small" style={styles.dividerText}>
               or

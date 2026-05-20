@@ -1,7 +1,10 @@
-import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import ActualMap from '@/components/actual-map';
 
+import { useLocationSharing } from '@/hooks/use-location';
+import { useUser } from '@/hooks/use-user';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useThemeMode } from '@/hooks/use-theme';
@@ -15,6 +18,28 @@ const trustedContacts = [
 export default function ProfileScreen() {
   const router = useRouter();
   const { mode, toggleTheme } = useThemeMode();
+  const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
+  const { user, setUser } = useUser();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftName, setDraftName] = useState(user.name);
+  const [draftEmail, setDraftEmail] = useState(user.email);
+  const [draftPhone, setDraftPhone] = useState(user.phone);
+
+  useEffect(() => {
+    setDraftName(user.name);
+    setDraftEmail(user.email);
+    setDraftPhone(user.phone);
+  }, [user.name, user.email, user.phone]);
+
+  const defaultCenter = { latitude: 37.7749, longitude: -122.4194 };
+  const mapCenter = location?.coords ?? defaultCenter;
+  const profileRegion = {
+    latitude: mapCenter.latitude,
+    longitude: mapCenter.longitude,
+    latitudeDelta: 0.02,
+    longitudeDelta: 0.02,
+  };
 
   const dynamicSettings = [
     { label: 'Theme', description: mode === 'light' ? 'Light mode' : 'Dark mode', icon: '🌓', action: toggleTheme },
@@ -43,23 +68,149 @@ export default function ProfileScreen() {
           <View style={styles.profileCard}>
             <View style={styles.profileRow}>
               <View style={styles.avatarPlaceholder}>
-                <ThemedText type="default">SJ</ThemedText>
+                <ThemedText type="default">
+                  {user.name
+                    .split(' ')
+                    .filter(Boolean)
+                    .map((part) => part[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase()}
+                </ThemedText>
               </View>
               <View style={styles.profileInfo}>
-                <ThemedText type="default" style={styles.profileName}>
-                  Sarah Johnson
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  sarah.johnson@email.com
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  +1 (555) 123-4567
-                </ThemedText>
+                {isEditing ? (
+                  <>
+                    <TextInput
+                      style={styles.profileInput}
+                      value={draftName}
+                      onChangeText={setDraftName}
+                      placeholder="Full name"
+                    />
+                    <TextInput
+                      style={styles.profileInput}
+                      value={draftEmail}
+                      onChangeText={setDraftEmail}
+                      placeholder="Email"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                    <TextInput
+                      style={styles.profileInput}
+                      value={draftPhone}
+                      onChangeText={setDraftPhone}
+                      placeholder="Phone number"
+                      keyboardType="phone-pad"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <ThemedText type="default" style={styles.profileName}>
+                      {user.name}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {user.email}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {user.phone}
+                    </ThemedText>
+                  </>
+                )}
               </View>
-              <Pressable style={styles.editButton}>
-                <ThemedText type="default">✏️</ThemedText>
+              <View style={styles.profileActions}>
+                {isEditing ? (
+                  <>
+                    <Pressable
+                      style={[styles.controlButton, styles.saveButton]}
+                      onPress={() => {
+                        setUser({
+                          name: draftName.trim() || 'SafeGuard User',
+                          email: draftEmail.trim() || 'user@safe.io',
+                          phone: draftPhone.trim() || '+1 (555) 000-0000',
+                        });
+                        setIsEditing(false);
+                      }}
+                    >
+                      <ThemedText type="default" style={styles.saveButtonText}>
+                        Save
+                      </ThemedText>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.controlButton, styles.cancelButton]}
+                      onPress={() => {
+                        setDraftName(user.name);
+                        setDraftEmail(user.email);
+                        setDraftPhone(user.phone);
+                        setIsEditing(false);
+                      }}
+                    >
+                      <ThemedText type="default" style={styles.cancelButtonText}>
+                        Cancel
+                      </ThemedText>
+                    </Pressable>
+                  </>
+                ) : (
+                  <Pressable style={styles.editButton} onPress={() => setIsEditing(true)}>
+                    <ThemedText type="default">✏️</ThemedText>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.locationPreviewCard}>
+            <View style={styles.locationPreviewHeader}>
+              <ThemedText type="default" style={styles.sectionTitle}>
+                Current Location
+              </ThemedText>
+              <Pressable onPress={refreshLocation} style={styles.refreshButton}>
+                <ThemedText type="small" style={styles.refreshText}>
+                  Refresh
+                </ThemedText>
               </Pressable>
             </View>
+            {!consentGranted ? (
+              <View style={styles.locationConsentRow}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Allow location sharing to show your current position on the map.
+                </ThemedText>
+                <Pressable style={styles.consentButton} onPress={enableLocationSharing}>
+                  <ThemedText type="default" style={styles.consentButtonText}>
+                    Enable Location Sharing
+                  </ThemedText>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.locationMapWrapper}>
+                <ActualMap latitude={mapCenter.latitude} longitude={mapCenter.longitude} radius={0.2} style={styles.locationMap} />
+                {loading && (
+                  <View style={styles.locationMapOverlay}>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <ThemedText type="small" style={styles.mapLoadingText}>
+                      Updating location...
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+            )}
+            {error ? (
+              <View style={styles.locationErrorCard}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {error}
+                </ThemedText>
+              </View>
+            ) : consentGranted && location ? (
+              <View style={styles.locationDetailsRow}>
+                <ThemedText type="smallBold">Lat</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {location.coords.latitude.toFixed(5)}
+                </ThemedText>
+                <ThemedText type="smallBold">Lng</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {location.coords.longitude.toFixed(5)}
+                </ThemedText>
+              </View>
+            ) : null}
           </View>
 
           <View style={styles.sectionCard}>
@@ -200,6 +351,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  profileInput: {
+    borderRadius: Spacing.three,
+    borderWidth: 1,
+    borderColor: '#e0dfdd',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+    backgroundColor: '#fff',
+    color: '#000',
+    width: '100%',
+  },
+  profileActions: {
+    gap: Spacing.two,
+    alignItems: 'flex-end',
+  },
+  controlButton: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Spacing.three,
+    alignItems: 'center',
+  },
+  saveButton: {
+    backgroundColor: '#c8554f',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  cancelButton: {
+    backgroundColor: '#f2f4f7',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: '700',
+  },
   sectionCard: {
     padding: Spacing.four,
     borderRadius: Spacing.four,
@@ -210,8 +395,79 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: Spacing.three,
   },
-  sectionHeaderRow: {
+  locationPreviewCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 2,
+    gap: Spacing.three,
+  },
+  locationPreviewHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  refreshButton: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Spacing.three,
+    backgroundColor: '#f2f4f7',
+  },
+  refreshText: {
+    color: '#c8554f',
+    fontWeight: '700',
+  },
+  locationConsentRow: {
+    gap: Spacing.two,
+  },
+  locationMapWrapper: {
+    width: '100%',
+    height: 180,
+    borderRadius: Spacing.four,
+    overflow: 'hidden',
+    backgroundColor: '#e7ecf6',
+  },
+  locationMap: {
+    width: '100%',
+    height: '100%',
+  },
+  locationMapOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+  },
+  mapLoadingText: {
+    color: '#fff',
+  },
+  locationDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+  },
+  consentButton: {
+    marginTop: Spacing.two,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+    borderRadius: Spacing.four,
+    backgroundColor: '#c8554f',
+  },
+  consentButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  locationErrorCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#feeaea',
+    borderWidth: 1,
+    borderColor: '#f5c6c6',
+  },
+  sectionHeaderRow: {
     justifyContent: 'space-between',
     alignItems: 'center',
   },

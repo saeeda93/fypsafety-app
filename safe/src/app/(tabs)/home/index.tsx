@@ -1,7 +1,10 @@
 import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
-import { AppLogo } from '@/components/app-logo';import { ThemedText } from '@/components/themed-text';
+import { ActivityIndicator, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import ActualMap from '@/components/actual-map';
+import { AppLogo } from '@/components/app-logo';
+import { ThemedText } from '@/components/themed-text';
+import { useLocationSharing } from '@/hooks/use-location';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 
@@ -50,6 +53,16 @@ export default function HomeScreen() {
   const { showPermissions } = useLocalSearchParams();
   const [modalVisible, setModalVisible] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
+
+  const defaultCenter = { latitude: 37.7749, longitude: -122.4194 };
+  const mapCenter = location?.coords ?? defaultCenter;
+  const mapRegion = {
+    latitude: mapCenter.latitude,
+    longitude: mapCenter.longitude,
+    latitudeDelta: 0.02,
+    longitudeDelta: 0.02,
+  };
 
   useEffect(() => {
     if (showPermissions === '1') {
@@ -88,13 +101,38 @@ export default function HomeScreen() {
                 Tracking you now
               </ThemedText>
             </View>
-            <View style={styles.mapActionRow}>
-              <Pressable style={styles.actionButton} onPress={() => router.push('emergency-services')}>
-                <ThemedText type="default" style={styles.actionText}>
-                  Emergency Alert
+            {!consentGranted ? (
+              <View style={styles.locationConsentCard}>
+                <ThemedText type="smallBold">Enable Location Sharing</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Allow access to display your real-time device location on the home preview.
                 </ThemedText>
-              </Pressable>
-            </View>
+                <Pressable style={styles.consentButton} onPress={enableLocationSharing}>
+                  <ThemedText type="default" style={styles.consentButtonText}>
+                    Allow Location Sharing
+                  </ThemedText>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.homeMapContainer}>
+                <ActualMap latitude={mapCenter.latitude} longitude={mapCenter.longitude} radius={0.1} style={styles.homeMap} />
+                {loading && (
+                  <View style={styles.mapOverlay}>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <ThemedText type="small" style={styles.mapLoadingText}>
+                      Updating location...
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+            )}
+            {error && (
+              <View style={styles.locationErrorCard}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {error}
+                </ThemedText>
+              </View>
+            )}
           </View>
 
           <View style={styles.sectionHeader}>
@@ -356,6 +394,62 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  homeMapContainer: {
+    height: 220,
+    borderRadius: Spacing.four,
+    overflow: 'hidden',
+    backgroundColor: '#e7ecf6',
+  },
+  homeMap: {
+    width: '100%',
+    height: '100%',
+  },
+  mapOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+  },
+  mapLoadingText: {
+    color: '#fff',
+  },
+  locationConsentCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    gap: Spacing.two,
+  },
+  consentButton: {
+    marginTop: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.four,
+    alignItems: 'center',
+    backgroundColor: '#c8554f',
+  },
+  consentButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  locationErrorCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#feeaea',
+    borderWidth: 1,
+    borderColor: '#f5c6c6',
+    marginTop: Spacing.two,
+  },
+  consentButton: {
+    marginTop: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.four,
+    alignItems: 'center',
+    backgroundColor: '#c8554f',
+  },
+  consentButtonText: {
+    color: '#fff',
+    fontWeight: '700',
   },
   mapLabel: {
     maxWidth: 220,

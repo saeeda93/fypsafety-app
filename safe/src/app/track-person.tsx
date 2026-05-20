@@ -1,7 +1,9 @@
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 
+import ActualMap from '@/components/actual-map';
+import { useLocationSharing } from '@/hooks/use-location';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -18,6 +20,7 @@ const personDataMap: Record<number, any> = {
     currentLocation: 'Market Street, San Francisco',
     speed: '0 mph',
     battery: '78%',
+    offset: { latitude: 0.0010, longitude: 0.0007 },
   },
   2: {
     id: 2,
@@ -27,9 +30,10 @@ const personDataMap: Record<number, any> = {
     lastUpdate: 'Updated 5 minutes ago',
     boundaryStatus: 'Within Safe Boundary',
     boundaryDetail: 'Tech Park - 0.5 miles radius',
-    currentLocation: 'Silicon Valley, CA',
+    currentLocation: 'Tech Park Office',
     speed: '12 mph',
     battery: '85%',
+    offset: { latitude: -0.0012, longitude: -0.0010 },
   },
   3: {
     id: 3,
@@ -39,9 +43,10 @@ const personDataMap: Record<number, any> = {
     lastUpdate: 'Updated 8 minutes ago',
     boundaryStatus: 'Outside Safe Boundary',
     boundaryDetail: 'University Area - 1.2 miles away',
-    currentLocation: 'University Campus, CA',
+    currentLocation: 'University Campus',
     speed: '0 mph',
     battery: '42%',
+    offset: { latitude: 0.0015, longitude: -0.0008 },
   },
   4: {
     id: 4,
@@ -51,9 +56,10 @@ const personDataMap: Record<number, any> = {
     lastUpdate: 'Updated just now',
     boundaryStatus: 'Within Safe Boundary',
     boundaryDetail: 'Fitness Center - 0.2 miles radius',
-    currentLocation: 'Fitness Center, Downtown',
+    currentLocation: 'Fitness Center',
     speed: '2 mph',
     battery: '92%',
+    offset: { latitude: -0.0008, longitude: 0.0012 },
   },
   5: {
     id: 5,
@@ -63,9 +69,10 @@ const personDataMap: Record<number, any> = {
     lastUpdate: 'Updated 1 minute ago',
     boundaryStatus: 'Within Safe Boundary',
     boundaryDetail: 'Home Zone - 0.1 miles radius',
-    currentLocation: 'Home, Brooklyn NY',
+    currentLocation: 'Home',
     speed: '0 mph',
     battery: '65%',
+    offset: { latitude: -0.0010, longitude: -0.0007 },
   },
 };
 
@@ -76,6 +83,29 @@ export default function TrackPersonScreen() {
 
   const id = typeof personId === 'string' ? parseInt(personId) : 1;
   const person = personDataMap[id];
+
+  const { consentGranted, location } = useLocationSharing();
+  const defaultCenter = { latitude: 37.7749, longitude: -122.4194 };
+  const userCoords = location?.coords ?? defaultCenter;
+
+  const personCoords = useMemo(() => {
+    if (location?.coords && person?.offset) {
+      return {
+        latitude: userCoords.latitude + person.offset.latitude,
+        longitude: userCoords.longitude + person.offset.longitude,
+      };
+    }
+
+    return person?.coords ?? defaultCenter;
+  }, [location, person, userCoords.latitude, userCoords.longitude]);
+
+  const personMarkers = useMemo(
+    () => [
+      { latitude: userCoords.latitude, longitude: userCoords.longitude, title: 'You' },
+      { latitude: personCoords.latitude, longitude: personCoords.longitude, title: person?.name, description: person?.currentLocation },
+    ],
+    [personCoords.latitude, personCoords.longitude, person?.name, person?.currentLocation, userCoords.latitude, userCoords.longitude]
+  );
 
   if (!person) {
     return (
@@ -120,9 +150,13 @@ export default function TrackPersonScreen() {
           </View>
 
           <View style={styles.mapPlaceholder}>
-            <View style={styles.mapCenter}>
-              <ThemedText style={styles.mapCenterDot}>📍</ThemedText>
-            </View>
+            <ActualMap
+              latitude={personCoords.latitude}
+              longitude={personCoords.longitude}
+              radius={0.6}
+              markers={personMarkers}
+              style={styles.personMap}
+            />
           </View>
 
           <View
@@ -286,6 +320,12 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.four,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  personMap: {
+    width: '100%',
+    height: 240,
+    borderRadius: Spacing.four,
     overflow: 'hidden',
   },
   mapCenter: {

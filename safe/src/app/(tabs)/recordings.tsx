@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import ActualMap from '@/components/actual-map';
+import { useLocationSharing } from '@/hooks/use-location';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -57,6 +59,26 @@ export default function DependantsScreen() {
     person.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const { consentGranted, location, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
+  const defaultCenter = { latitude: 37.7749, longitude: -122.4194 };
+  const mapCenter = location?.coords ?? defaultCenter;
+
+  useEffect(() => {
+    if (consentGranted) {
+      refreshLocation();
+    }
+  }, [consentGranted, refreshLocation]);
+
+  const dependantMarkers = useMemo(
+    () => [
+      { latitude: mapCenter.latitude, longitude: mapCenter.longitude, title: 'You' },
+      { latitude: mapCenter.latitude + 0.0012, longitude: mapCenter.longitude + 0.001, title: 'Emma', description: 'Nearby' },
+      { latitude: mapCenter.latitude - 0.0014, longitude: mapCenter.longitude - 0.0015, title: 'Michael', description: 'Nearby' },
+      { latitude: mapCenter.latitude + 0.0009, longitude: mapCenter.longitude - 0.0013, title: 'Sarah', description: 'Nearby' },
+    ],
+    [mapCenter.latitude, mapCenter.longitude]
+  );
+
   return (
     <ThemedView style={styles.scene}>
       <SafeAreaView style={styles.safeArea}>
@@ -90,6 +112,43 @@ export default function DependantsScreen() {
             </View>
             <ThemedText style={styles.locationIcon}>📍</ThemedText>
           </View>
+
+          {!consentGranted ? (
+            <View style={styles.locationConsentCard}>
+              <ThemedText type="smallBold" style={styles.consentTitle}>
+                Enable location sharing
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Allow access to show dependant locations around you.
+              </ThemedText>
+              <Pressable style={styles.consentButton} onPress={enableLocationSharing}>
+                <ThemedText type="default" style={styles.consentButtonText}>
+                  Allow Location Sharing
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.mapCard}>
+              <ThemedText type="default" style={styles.mapCardTitle}>
+                Nearby dependants
+              </ThemedText>
+              <ActualMap
+                latitude={mapCenter.latitude}
+                longitude={mapCenter.longitude}
+                radius={0.6}
+                markers={dependantMarkers}
+                style={styles.dependantsMap}
+              />
+              {loading && (
+                <View style={styles.mapStatusRow}>
+                  <ActivityIndicator size="small" color="#c8554f" />
+                  <ThemedText type="small" style={styles.mapStatusText}>
+                    Refreshing location...
+                  </ThemedText>
+                </View>
+              )}
+            </View>
+          )}
 
           <View style={styles.personList}>
             {filteredDependants.map((person) => (
@@ -229,6 +288,51 @@ const styles = StyleSheet.create({
   locationIcon: {
     fontSize: 24,
   },
+  locationConsentCard: {
+    padding: Spacing.four,
+    backgroundColor: '#fff',
+    borderRadius: Spacing.four,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+    gap: Spacing.three,
+  },
+  consentTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  consentButton: {
+    marginTop: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.three,
+    backgroundColor: '#c8554f',
+    alignItems: 'center',
+  },
+  consentButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  mapCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+    gap: Spacing.three,
+  },
+  mapCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  dependantsMap: {
+    width: '100%',
+    height: 220,
+    borderRadius: Spacing.four,
+    overflow: 'hidden',
+  },
   personList: {
     gap: Spacing.three,
   },
@@ -321,5 +425,15 @@ const styles = StyleSheet.create({
   quickActionLabel: {
     fontWeight: '600',
     fontSize: 12,
+  },
+  mapStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.three,
+  },
+  mapStatusText: {
+    color: '#666',
+    marginLeft: Spacing.two,
   },
 });

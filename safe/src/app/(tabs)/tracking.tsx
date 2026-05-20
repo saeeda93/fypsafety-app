@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { ImageBackground, LayoutChangeEvent, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, LayoutChangeEvent, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
+import ActualMap from '@/components/actual-map';
+import { useLocationSharing } from '@/hooks/use-location';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -27,6 +29,7 @@ export default function TrackingScreen() {
   const [dragging, setDragging] = useState(false);
   const [showLocationHistory, setShowLocationHistory] = useState(false);
   const [visibleLocations, setVisibleLocations] = useState(5);
+  const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
 
   const incrementRadius = () => setRadius((value) => Math.min(maxRadius, Math.round((value + 0.5) * 10) / 10));
   const decrementRadius = () => setRadius((value) => Math.max(minRadius, Math.round((value - 0.5) * 10) / 10));
@@ -47,9 +50,20 @@ export default function TrackingScreen() {
   };
 
   const filledPosition = Math.min(1, Math.max(0, (radius - minRadius) / (maxRadius - minRadius)));
-  const mapRadiusSize = 28 + ((radius - minRadius) / (maxRadius - minRadius)) * 220;
-  const mapImageUrl =
-    'https://staticmap.openstreetmap.de/staticmap.php?center=40.785091,-73.968285&zoom=15&size=600x400&maptype=mapnik&markers=40.785091,-73.968285,lightblue1';
+  const defaultCenter = { latitude: 40.785091, longitude: -73.968285 };
+  const mapCenter = location?.coords ?? defaultCenter;
+
+  const nearbyMarkers = [
+    { latitude: mapCenter.latitude + 0.0012, longitude: mapCenter.longitude + 0.0011, title: 'Cafe safe zone', description: 'Nearby safe point' },
+    { latitude: mapCenter.latitude - 0.0017, longitude: mapCenter.longitude - 0.0018, title: 'Park entrance', description: 'Nearby activity' },
+    { latitude: mapCenter.latitude + 0.0024, longitude: mapCenter.longitude - 0.0008, title: 'Transit stop', description: 'Nearby transit' },
+  ];
+
+  useEffect(() => {
+    if (consentGranted) {
+      refreshLocation();
+    }
+  }, [consentGranted]);
 
   return (
     <ThemedView style={styles.scene}>
@@ -60,24 +74,50 @@ export default function TrackingScreen() {
             Define a safe radius around your current location and receive alerts if the boundary is crossed.
           </ThemedText>
 
-          <ImageBackground source={{ uri: mapImageUrl }} style={styles.mapPreview} resizeMode="cover">
-            <View
-              style={[
-                styles.mapRadiusCircle,
-                {
-                  width: mapRadiusSize,
-                  height: mapRadiusSize,
-                  borderRadius: mapRadiusSize / 2,
-                  transform: [
-                    { translateX: -mapRadiusSize / 2 },
-                    { translateY: -mapRadiusSize / 2 },
-                  ],
-                },
-              ]}
-            />
-            <View style={styles.mapCenter}>
-              <View style={styles.locationDot} />
+          {!consentGranted && (
+            <View style={styles.locationConsentCard}>
+              <ThemedText type="smallBold" style={styles.consentTitle}>
+                Share your location
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.consentText}>
+                You must allow location sharing to see an accurate map of your device.
+              </ThemedText>
+              <Pressable style={styles.consentButton} onPress={enableLocationSharing}>
+                <ThemedText type="default" style={styles.consentButtonText}>
+                  Allow Location Sharing
+                </ThemedText>
+              </Pressable>
             </View>
+          )}
+
+          {consentGranted && loading && (
+            <View style={styles.locationLoading}>
+              <ActivityIndicator size="small" color="#c8554f" />
+              <ThemedText type="small" style={styles.loadingText}>
+                Loading current location...
+              </ThemedText>
+            </View>
+          )}
+
+          {error && (
+            <View style={styles.locationErrorCard}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {error}
+              </ThemedText>
+            </View>
+          )}
+
+          <View style={styles.mapPreview}>
+            <ActualMap
+              latitude={mapCenter.latitude}
+              longitude={mapCenter.longitude}
+              radius={radius}
+              markers={[
+                { latitude: mapCenter.latitude, longitude: mapCenter.longitude, title: 'You' },
+                ...nearbyMarkers,
+              ]}
+              style={styles.mapPreview}
+            />
             <View style={styles.radiusLabel}>
               <ThemedText type="default" style={styles.radiusLabelText}>
                 Radius
@@ -94,7 +134,7 @@ export default function TrackingScreen() {
                 <ThemedText type="default">－</ThemedText>
               </Pressable>
             </View>
-          </ImageBackground>
+          </View>
 
           <View style={styles.sliderRow}>
             <View
@@ -411,6 +451,50 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontWeight: '700',
+  },
+  locationConsentCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+    gap: Spacing.two,
+  },
+  consentTitle: {
+    fontWeight: '700',
+  },
+  consentText: {
+    lineHeight: 20,
+  },
+  consentButton: {
+    marginTop: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.four,
+    alignItems: 'center',
+    backgroundColor: '#c8554f',
+  },
+  consentButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  locationLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginBottom: Spacing.three,
+  },
+  loadingText: {
+    color: '#666',
+  },
+  locationErrorCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.four,
+    backgroundColor: '#feeaea',
+    borderWidth: 1,
+    borderColor: '#f5c6c6',
+    marginBottom: Spacing.three,
   },
   locationHistoryButton: {
     padding: Spacing.four,
