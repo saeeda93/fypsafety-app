@@ -5,12 +5,24 @@ import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, V
 import { AppLogo } from '@/components/app-logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useUser } from '@/hooks/use-user';
 import { Spacing } from '@/constants/theme';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  const handleSignIn = () => {
+    const result = login(email.trim(), password);
+    if (result.success) {
+      router.replace('/home');
+    } else {
+      setAuthError(result.message);
+    }
+  };
 
   return (
     <ThemedView style={styles.scene}>
@@ -67,13 +79,17 @@ export default function LoginScreen() {
               </ThemedText>
             </Pressable>
 
-            <Link href="../home" asChild>
-              <Pressable style={styles.primaryButton}>
-                <ThemedText type="default" style={styles.primaryButtonText}>
-                  Sign In
-                </ThemedText>
-              </Pressable>
-            </Link>
+            {authError ? (
+              <ThemedText type="small" themeColor="textSecondary" style={styles.errorText}>
+                {authError}
+              </ThemedText>
+            ) : null}
+
+            <Pressable style={styles.primaryButton} onPress={handleSignIn}>
+              <ThemedText type="default" style={styles.primaryButtonText}>
+                Sign In
+              </ThemedText>
+            </Pressable>
 
             <ThemedText type="small" style={styles.dividerText}>
               or
@@ -192,6 +208,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingTop: Spacing.two,
+  },
+  errorText: {
+    color: '#b91c1c',
+    marginTop: Spacing.two,
   },
   linkText: {
     fontWeight: '700',

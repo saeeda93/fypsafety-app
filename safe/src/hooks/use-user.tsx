@@ -19,10 +19,15 @@ export type UserInfo = {
   incomingContacts: ContactInfo[];
 };
 
+export type RegisteredUser = UserInfo & {
+  password: string;
+};
+
 export type NewUserInfo = {
   name: string;
   email: string;
   phone: string;
+  password: string;
 };
 
 const defaultUserInfo: UserInfo = {
@@ -53,12 +58,13 @@ const defaultUserInfo: UserInfo = {
   ],
 };
 
-const sampleRegisteredUsers: Record<string, UserInfo> = {
+const sampleRegisteredUsers: Record<string, RegisteredUser> = {
   MG1234: {
     name: 'Maya Grant',
     email: 'maya.grant@safe.io',
     phone: '+1 (555) 111-2222',
     uniqueCode: 'MG1234',
+    password: 'password123',
     contacts: [],
     incomingContacts: [],
   },
@@ -67,6 +73,7 @@ const sampleRegisteredUsers: Record<string, UserInfo> = {
     email: 'alex.lee@safe.io',
     phone: '+1 (555) 333-4444',
     uniqueCode: 'AL4321',
+    password: 'secure123',
     contacts: [],
     incomingContacts: [],
   },
@@ -74,15 +81,19 @@ const sampleRegisteredUsers: Record<string, UserInfo> = {
 
 const UserContext = createContext<{
   user: UserInfo;
+  authenticated: boolean;
   setUser: (user: UserInfo) => void;
   registerUser: (userInfo: NewUserInfo) => UserInfo;
+  login: (email: string, password: string) => { success: boolean; message: string };
+  logout: () => void;
   findUserByCode: (code: string) => UserInfo | undefined;
   addContactByCode: (contactCode: string, role: string) => { success: boolean; message: string };
 } | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo>(defaultUserInfo);
-  const [registeredUsers, setRegisteredUsers] = useState<Record<string, UserInfo>>(sampleRegisteredUsers);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [registeredUsers, setRegisteredUsers] = useState<Record<string, RegisteredUser>>(sampleRegisteredUsers);
 
   const generateCode = useCallback((name: string, existingCodes: Set<string>) => {
     const initials = name
@@ -105,7 +116,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const existingCodes = new Set(Object.keys(registeredUsers));
     const uniqueCode = generateCode(userInfo.name, existingCodes);
 
-    const fullUser: UserInfo = {
+    const fullUser: RegisteredUser = {
       ...defaultUserInfo,
       ...userInfo,
       uniqueCode,
@@ -137,9 +148,33 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       [uniqueCode]: fullUser,
     }));
     setUser(fullUser);
+    setAuthenticated(true);
 
     return fullUser;
   }, [generateCode, registeredUsers]);
+
+  const login = useCallback(
+    (email: string, password: string) => {
+      const normalizedEmail = email.trim().toLowerCase();
+      const matchingUser = Object.values(registeredUsers).find(
+        (storedUser) => storedUser.email.toLowerCase() === normalizedEmail
+      );
+
+      if (!matchingUser || matchingUser.password !== password) {
+        return { success: false, message: 'Invalid email or password.' };
+      }
+
+      setUser(matchingUser);
+      setAuthenticated(true);
+      return { success: true, message: 'Welcome back.' };
+    },
+    [registeredUsers]
+  );
+
+  const logout = useCallback(() => {
+    setAuthenticated(false);
+    setUser(defaultUserInfo);
+  }, []);
 
   const findUserByCode = useCallback(
     (code: string) => registeredUsers[code.toUpperCase()],
@@ -200,12 +235,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       user,
+      authenticated,
       setUser: updateUser,
       registerUser,
+      login,
+      logout,
       findUserByCode,
       addContactByCode,
     }),
-    [user, updateUser, registerUser, findUserByCode, addContactByCode]
+    [user, authenticated, updateUser, registerUser, login, logout, findUserByCode, addContactByCode]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

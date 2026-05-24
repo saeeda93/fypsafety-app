@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import ActualMap from '../../components/actual-map';
 
@@ -14,7 +14,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { mode, toggleTheme } = useThemeMode();
   const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
-  const { user, setUser, addContactByCode } = useUser();
+  const { user, setUser, addContactByCode, logout } = useUser();
   const contacts = user.contacts ?? [];
 
   const [isEditing, setIsEditing] = useState(false);
@@ -60,12 +60,13 @@ export default function ProfileScreen() {
 
   const dynamicSettings = [
     { label: 'Theme', description: mode === 'light' ? 'Light mode' : 'Dark mode', icon: '🌓', action: toggleTheme },
-    { label: 'Notifications', description: 'Manage alerts', icon: '🔔' },
-    { label: 'Privacy & Security', description: 'Location, data settings', icon: '🔒' },
-    { label: 'Help & Support', description: 'FAQ, contact us', icon: '❓' },
+    { label: 'Notifications', description: 'Manage alerts', icon: '🔔', action: handleOpenNotifications },
+    { label: 'Privacy & Security', description: 'Location, data settings', icon: '🔒', action: handleOpenPrivacy },
+    { label: 'Help & Support', description: 'FAQ, contact us', icon: '❓', action: handleOpenHelp },
   ];
 
   const handleLogout = () => {
+    logout();
     router.replace('/login');
   };
 
@@ -327,6 +328,109 @@ export default function ProfileScreen() {
               Delete Account
             </ThemedText>
           </Pressable>
+
+          <Modal animationType="fade" transparent visible={notificationsVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalHeaderRow}>
+                  <ThemedText type="subtitle">Notifications</ThemedText>
+                  <Pressable style={styles.closeButton} onPress={() => setNotificationsVisible(false)}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.modalText}>
+                  Manage your alert preferences and review recent notifications from your safety circle.
+                </ThemedText>
+                <View style={styles.modalSection}>
+                  <ThemedText type="default" style={styles.modalSectionTitle}>
+                    Alert Preferences
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Toggle emergency alerts, location updates, and tracking notifications for your account.
+                  </ThemedText>
+                </View>
+                <Pressable style={styles.allowButton} onPress={() => setNotificationsVisible(false)}>
+                  <ThemedText type="default" style={styles.allowButtonText}>
+                    Done
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal animationType="fade" transparent visible={privacyVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalHeaderRow}>
+                  <ThemedText type="subtitle">Privacy & Security</ThemedText>
+                  <Pressable style={styles.closeButton} onPress={() => setPrivacyVisible(false)}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.modalText}>
+                  Control your location sharing and app security settings in one place.
+                </ThemedText>
+                <View style={styles.modalSection}>
+                  <ThemedText type="default" style={styles.modalSectionTitle}>
+                    Location Sharing
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Your device location is shared only with trusted contacts after you enable permissions.
+                  </ThemedText>
+                </View>
+                <View style={styles.modalSection}>
+                  <ThemedText type="default" style={styles.modalSectionTitle}>
+                    Account Security
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Keep your unique code private and update your profile details to keep your account secure.
+                  </ThemedText>
+                </View>
+                <Pressable style={styles.allowButton} onPress={() => setPrivacyVisible(false)}>
+                  <ThemedText type="default" style={styles.allowButtonText}>
+                    Close
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal animationType="fade" transparent visible={helpVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalHeaderRow}>
+                  <ThemedText type="subtitle">Help & Support</ThemedText>
+                  <Pressable style={styles.closeButton} onPress={() => setHelpVisible(false)}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.modalText}>
+                  Find answers to common questions and contact support if you need help with the app.
+                </ThemedText>
+                <View style={styles.modalSection}>
+                  <ThemedText type="default" style={styles.modalSectionTitle}>
+                    FAQ
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Learn how to add trusted contacts, enable tracking, and stay secure while using SafeGuard.
+                  </ThemedText>
+                </View>
+                <View style={styles.modalSection}>
+                  <ThemedText type="default" style={styles.modalSectionTitle}>
+                    Contact Support
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Email support@safe.io or visit the Help Center for more assistance.
+                  </ThemedText>
+                </View>
+                <Pressable style={styles.allowButton} onPress={() => setHelpVisible(false)}>
+                  <ThemedText type="default" style={styles.allowButtonText}>
+                    Close
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -562,6 +666,55 @@ const styles = StyleSheet.create({
   contactMessage: {
     marginTop: Spacing.two,
     color: '#6f7988',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    padding: Spacing.four,
+  },
+  modalCard: {
+    borderRadius: Spacing.four,
+    backgroundColor: '#fff',
+    padding: Spacing.four,
+    gap: Spacing.three,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  modalText: {
+    marginTop: Spacing.one,
+  },
+  modalSection: {
+    gap: Spacing.one,
+    paddingVertical: Spacing.three,
+    borderTopWidth: 1,
+    borderTopColor: '#f2f3f5',
+  },
+  modalSectionTitle: {
+    fontWeight: '700',
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f2f4f7',
+  },
+  allowButton: {
+    marginTop: Spacing.three,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.four,
+    backgroundColor: '#c8554f',
+    alignItems: 'center',
+  },
+  allowButtonText: {
+    color: '#fff',
+    fontWeight: '700',
   },
   addContactButton: {
     marginTop: Spacing.two,

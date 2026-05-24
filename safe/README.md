@@ -63,3 +63,5 @@ Join our community of developers creating universal apps.
 //////
 do the map functionality
 manage alerts and other stuff on profile hould be functional
+Mary shelley didnt appear under view all in dependants, fix it
+authentication functionality; cant let one email sign up multiple times

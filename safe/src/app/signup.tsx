@@ -25,6 +25,7 @@ export default function SignupScreen() {
       name: fullName.trim() || 'SafeGuard User',
       email: email.trim() || 'user@safe.io',
       phone: phone.trim() || '+1 (555) 000-0000',
+      password: password || 'password123',
     });
 
     router.replace('/home?showPermissions=1');

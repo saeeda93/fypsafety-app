@@ -1,11 +1,20 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs, useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useUser } from '@/hooks/use-user';
 
 export default function TabsLayout() {
   const theme = useTheme();
+  const { authenticated } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authenticated) {
+      router.replace('/login');
+    }
+  }, [authenticated, router]);
 
   return (
     <Tabs
