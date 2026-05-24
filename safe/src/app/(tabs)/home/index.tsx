@@ -50,6 +50,7 @@ export default function HomeScreen() {
   const [contactsVisible, setContactsVisible] = useState(false);
   const [selectContactsVisible, setSelectContactsVisible] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [trackedContactCodes, setTrackedContactCodes] = useState<string[]>([]);
   const [notifications, setNotifications] = useState(defaultNotifications);
   const [alertStatusMessage, setAlertStatusMessage] = useState<string | null>(null);
   const { user } = useUser();
@@ -78,6 +79,14 @@ export default function HomeScreen() {
     );
   };
 
+  const addTrackedContactCodes = (contactCodes: string[]) => {
+    setTrackedContactCodes((current) => {
+      const nextSet = new Set(current);
+      contactCodes.forEach((code) => nextSet.add(code));
+      return Array.from(nextSet);
+    });
+  };
+
   const handleSendLocationAlert = () => {
     if (selectedContacts.length === 0) {
       setAlertStatusMessage('Select at least one contact to notify.');
@@ -94,6 +103,7 @@ export default function HomeScreen() {
       ...current,
     ]);
     setAlertStatusMessage(`Location shared with ${selectedContacts.length} ${selectedContacts.length === 1 ? 'contact' : 'contacts'}.`);
+    addTrackedContactCodes(selectedContacts);
     setSelectedContacts([]);
     setSelectContactsVisible(false);
   };
@@ -114,6 +124,7 @@ export default function HomeScreen() {
       ...current,
     ]);
     setAlertStatusMessage(`Urgent alert sent to all ${contacts.length} trusted contacts.`);
+    addTrackedContactCodes(contacts.map((contact) => contact.contactCode));
   };
 
   useEffect(() => {
@@ -121,6 +132,16 @@ export default function HomeScreen() {
       setModalVisible(true);
     }
   }, [showPermissions]);
+
+  const peopleTracking = contacts.length
+    ? contacts
+        .filter((contact) => trackedContactCodes.length === 0 || trackedContactCodes.includes(contact.contactCode))
+        .map((contact) => ({
+          name: contact.name,
+          status: contact.sharingEnabled === false ? 'Paused' : contact.status,
+          distance: contact.sharingEnabled === false ? 'Paused' : 'Just now',
+        }))
+    : people;
 
   return (
     <ThemedView style={styles.scene}>
@@ -421,8 +442,8 @@ export default function HomeScreen() {
             </View>
           </Modal>
           <View style={styles.peopleList}>
-            {people.map((person) => (
-              <View key={person.name} style={styles.personCard}>
+            {peopleTracking.map((person) => (
+              <View key={`${person.name}-${person.distance}`} style={styles.personCard}>
                 <View style={styles.personAvatar}>
                   <ThemedText type="default">{person.name[0]}</ThemedText>
                 </View>
@@ -434,7 +455,7 @@ export default function HomeScreen() {
                     {person.distance}
                   </ThemedText>
                 </View>
-                <View style={[styles.personStatus, person.status === 'Active' ? styles.statusActive : styles.statusPaused]}>
+                <View style={[styles.personStatus, person.status === 'Active' || person.status === 'Tracking' ? styles.statusActive : styles.statusPaused]}>
                   <ThemedText type="smallBold" style={styles.personStatusText}>
                     {person.status}
                   </ThemedText>

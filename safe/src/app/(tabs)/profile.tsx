@@ -14,7 +14,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { mode, toggleTheme } = useThemeMode();
   const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
-  const { user, setUser, addContactByCode, logout } = useUser();
+  const { user, setUser, addContactByCode, updateContact, removeContact, logout } = useUser();
   const contacts = user.contacts ?? [];
 
   const [isEditing, setIsEditing] = useState(false);
@@ -24,6 +24,11 @@ export default function ProfileScreen() {
   const [newContactCode, setNewContactCode] = useState('');
   const [newContactRole, setNewContactRole] = useState('');
   const [contactStatusMessage, setContactStatusMessage] = useState('');
+  const [contactModalVisible, setContactModalVisible] = useState(false);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContactName, setSelectedContactName] = useState('');
+  const [selectedContactRole, setSelectedContactRole] = useState('');
+  const [selectedContactSharing, setSelectedContactSharing] = useState(true);
   const [notificationsVisible, setNotificationsVisible] = useState(false);
   const [privacyVisible, setPrivacyVisible] = useState(false);
   const [helpVisible, setHelpVisible] = useState(false);
@@ -45,9 +50,57 @@ export default function ProfileScreen() {
     setDraftPhone(user.phone);
   }, [user.name, user.email, user.phone]);
 
+  useEffect(() => {
+    if (!selectedContactId) {
+      return;
+    }
+
+    const contact = contacts.find((item) => item.contactCode === selectedContactId);
+    if (contact) {
+      setSelectedContactName(contact.name);
+      setSelectedContactRole(contact.role);
+      setSelectedContactSharing(contact.sharingEnabled ?? true);
+    }
+  }, [selectedContactId, contacts]);
+
   const handleOpenNotifications = () => setNotificationsVisible(true);
   const handleOpenPrivacy = () => setPrivacyVisible(true);
   const handleOpenHelp = () => setHelpVisible(true);
+
+  const handleOpenContact = (contact: typeof contacts[number]) => {
+    setSelectedContactId(contact.contactCode);
+    setSelectedContactName(contact.name);
+    setSelectedContactRole(contact.role);
+    setSelectedContactSharing(contact.sharingEnabled ?? true);
+    setContactModalVisible(true);
+  };
+
+  const handleSaveContactDetails = () => {
+    if (!selectedContactId) {
+      return;
+    }
+
+    updateContact(selectedContactId, {
+      name: selectedContactName.trim() || 'Trusted Contact',
+      role: selectedContactRole.trim() || 'Trusted Contact',
+      sharingEnabled: selectedContactSharing,
+      status: selectedContactSharing ? 'Active' : 'Paused',
+    });
+    setContactModalVisible(false);
+  };
+
+  const handleDeleteContact = () => {
+    if (!selectedContactId) {
+      return;
+    }
+
+    removeContact(selectedContactId);
+    setContactModalVisible(false);
+  };
+
+  const handleToggleSharing = () => {
+    setSelectedContactSharing((current) => !current);
+  };
 
   const defaultCenter = { latitude: 37.7749, longitude: -122.4194 };
   const mapCenter = location?.coords ?? defaultCenter;
@@ -246,24 +299,29 @@ export default function ProfileScreen() {
                 No contacts added yet. Add one below to keep your safety circle updated.
               </ThemedText>
             ) : (
-              contacts.map((contact) => (
-                <View key={contact.id} style={styles.contactRow}>
-                  <View style={styles.contactAvatar}>
-                    <ThemedText type="default">{contact.name[0]}</ThemedText>
-                  </View>
-                  <View style={styles.contactInfo}>
-                    <ThemedText type="default" style={styles.contactName}>
-                      {contact.name}
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {contact.role}
-                    </ThemedText>
-                  </View>
-                  <ThemedText type="smallBold" style={styles.contactStatus}>
-                    {contact.status}
-                  </ThemedText>
-                </View>
-              ))
+              contacts.map((contact) => {
+                const displayStatus = contact.sharingEnabled === false ? 'Paused' : contact.status;
+                return (
+                  <Pressable key={contact.id} style={styles.contactRow} onPress={() => handleOpenContact(contact)}>
+                    <View style={styles.contactAvatar}>
+                      <ThemedText type="default">{contact.name[0]}</ThemedText>
+                    </View>
+                    <View style={styles.contactInfo}>
+                      <ThemedText type="default" style={styles.contactName}>
+                        {contact.name}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {contact.role}
+                      </ThemedText>
+                    </View>
+                    <View style={styles.contactStatusPill}>
+                      <ThemedText type="smallBold" style={styles.contactStatusText}>
+                        {displayStatus}
+                      </ThemedText>
+                    </View>
+                  </Pressable>
+                );
+              })
             )}
             <View style={styles.addContactForm}>
               <ThemedText type="small" themeColor="textSecondary">
@@ -294,6 +352,52 @@ export default function ProfileScreen() {
               ) : null}
             </View>
           </View>
+
+          <Modal animationType="fade" transparent visible={contactModalVisible}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalHeaderRow}>
+                  <ThemedText type="subtitle">Contact Settings</ThemedText>
+                  <Pressable style={styles.closeButton} onPress={() => setContactModalVisible(false)}>
+                    <ThemedText type="default">✕</ThemedText>
+                  </Pressable>
+                </View>
+                <TextInput
+                  style={styles.profileInput}
+                  value={selectedContactName}
+                  onChangeText={setSelectedContactName}
+                  placeholder="Name"
+                />
+                <TextInput
+                  style={styles.profileInput}
+                  value={selectedContactRole}
+                  onChangeText={setSelectedContactRole}
+                  placeholder="Relationship"
+                />
+                <Pressable
+                  style={[styles.controlButton, selectedContactSharing ? styles.cancelButton : styles.saveButton]}
+                  onPress={handleToggleSharing}
+                >
+                  <ThemedText type="default" style={selectedContactSharing ? styles.cancelButtonText : styles.saveButtonText}>
+                    {selectedContactSharing ? 'Disable Location Sharing' : 'Enable Location Sharing'}
+                  </ThemedText>
+                </Pressable>
+                <Pressable style={[styles.controlButton, styles.saveButton]} onPress={handleSaveContactDetails}>
+                  <ThemedText type="default" style={styles.saveButtonText}>
+                    Save Changes
+                  </ThemedText>
+                </Pressable>
+                <Pressable style={[styles.deleteButton, { marginTop: Spacing.two }]} onPress={handleDeleteContact}>
+                  <ThemedText type="default" style={styles.deleteText}>
+                    Delete Contact
+                  </ThemedText>
+                </Pressable>
+                <Pressable style={styles.skipButton} onPress={() => setContactModalVisible(false)}>
+                  <ThemedText type="linkPrimary">Cancel</ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
 
           <View style={styles.sectionCard}>
             {dynamicSettings.map((item) => (
@@ -656,6 +760,15 @@ const styles = StyleSheet.create({
   contactStatus: {
     color: '#2f6b5b',
   },
+  contactStatusPill: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+    borderRadius: Spacing.five,
+    backgroundColor: '#f0f4f1',
+  },
+  contactStatusText: {
+    color: '#2f6b5b',
+  },
   addContactForm: {
     gap: Spacing.two,
     marginTop: Spacing.two,
@@ -715,6 +828,10 @@ const styles = StyleSheet.create({
   allowButtonText: {
     color: '#fff',
     fontWeight: '700',
+  },
+  skipButton: {
+    marginTop: Spacing.two,
+    alignItems: 'center',
   },
   addContactButton: {
     marginTop: Spacing.two,

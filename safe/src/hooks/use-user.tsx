@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
 
 export type ContactInfo = {
   id: string;
@@ -6,6 +7,7 @@ export type ContactInfo = {
   name: string;
   role: string;
   status: string;
+  sharingEnabled?: boolean;
   email?: string;
   phone?: string;
 };
@@ -30,6 +32,12 @@ export type NewUserInfo = {
   password: string;
 };
 
+const STORAGE_KEYS = {
+  user: 'SAFE_USER',
+  registeredUsers: 'SAFE_REGISTERED_USERS',
+  authenticated: 'SAFE_AUTHENTICATED',
+};
+
 const defaultUserInfo: UserInfo = {
   name: 'SafeGuard User',
   email: 'user@safe.io',
@@ -43,6 +51,7 @@ const defaultUserInfo: UserInfo = {
       name: 'Maya Grant',
       role: 'Trusted Contact',
       status: 'Offline',
+      sharingEnabled: true,
       email: 'maya.grant@safe.io',
       phone: '+1 (555) 111-2222',
     },
@@ -52,6 +61,7 @@ const defaultUserInfo: UserInfo = {
       name: 'Alex Lee',
       role: 'Trusted Contact',
       status: 'Online',
+      sharingEnabled: true,
       email: 'alex.lee@safe.io',
       phone: '+1 (555) 333-4444',
     },
@@ -88,12 +98,30 @@ const UserContext = createContext<{
   logout: () => void;
   findUserByCode: (code: string) => UserInfo | undefined;
   addContactByCode: (contactCode: string, role: string) => { success: boolean; message: string };
+  updateContact: (contactCode: string, updates: Partial<ContactInfo>) => void;
+  removeContact: (contactCode: string) => void;
 } | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo>(defaultUserInfo);
   const [authenticated, setAuthenticated] = useState(false);
   const [registeredUsers, setRegisteredUsers] = useState<Record<string, RegisteredUser>>(sampleRegisteredUsers);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const persistState = useCallback(async (nextUser: UserInfo, nextAuthenticated: boolean, nextRegisteredUsers: Record<string, RegisteredUser>) => {
+    try {
+      await SecureStore.setItemAsync(STORAGE_KEYS.registeredUsers, JSON.stringify(nextRegisteredUsers));
+      await SecureStore.setItemAsync(STORAGE_KEYS.authenticated, nextAuthenticated ? 'true' : 'false');
+
+      if (nextAuthenticated) {
+        await SecureStore.setItemAsync(STORAGE_KEYS.user, JSON.stringify(nextUser));
+      } else {
+        await SecureStore.deleteItemAsync(STORAGE_KEYS.user);
+      }
+    } catch {
+      // Ignore persistence failures for now.
+    }
+  }, []);
 
   const generateCode = useCallback((name: string, existingCodes: Set<string>) => {
     const initials = name
@@ -143,15 +171,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       ],
     };
 
-    setRegisteredUsers((current) => ({
-      ...current,
+    const nextRegisteredUsers = {
+      ...registeredUsers,
       [uniqueCode]: fullUser,
-    }));
+    };
+
+    setRegisteredUsers(nextRegisteredUsers);
     setUser(fullUser);
     setAuthenticated(true);
+    persistState(fullUser, true, nextRegisteredUsers);
 
     return fullUser;
-  }, [generateCode, registeredUsers]);
+  }, [generateCode, persistState, registeredUsers]);
 
   const login = useCallback(
     (email: string, password: string) => {
@@ -166,15 +197,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       setUser(matchingUser);
       setAuthenticated(true);
+      persistState(matchingUser, true, registeredUsers);
       return { success: true, message: 'Welcome back.' };
     },
-    [registeredUsers]
+    [persistState, registeredUsers]
   );
 
   const logout = useCallback(() => {
     setAuthenticated(false);
     setUser(defaultUserInfo);
-  }, []);
+    persistState(defaultUserInfo, false, registeredUsers);
+  }, [persistState, registeredUsers]);
 
   const findUserByCode = useCallback(
     (code: string) => registeredUsers[code.toUpperCase()],
@@ -201,35 +234,101 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: 'This contact is already added.' };
       }
 
-      setUser((current) => ({
-        ...current,
-        contacts: [
-          ...current.contacts,
-          {
-            id: normalizedCode,
-            contactCode: normalizedCode,
-            name: matchingUser.name,
-            role: role || 'Trusted Contact',
-            status: 'Active',
-            email: matchingUser.email,
-            phone: matchingUser.phone,
-          },
-        ],
-      }));
+      setUser((current) => {
+        const nextUser = {
+          ...current,
+          contacts: [
+            ...current.contacts,
+            {
+              id: normalizedCode,
+              contactCode: normalizedCode,
+              name: matchingUser.name,
+              role: role || 'Trusted Contact',
+              status: 'Active',
+              sharingEnabled: true,
+              email: matchingUser.email,
+              phone: matchingUser.phone,
+            },
+          ],
+        };
+
+        persistState(nextUser, authenticated, registeredUsers);
+        return nextUser;
+      });
 
       return { success: true, message: `${matchingUser.name} has been added.` };
     },
-    [registeredUsers, user]
+    [authenticated, persistState, registeredUsers, user]
+  );
+
+  const updateContact = useCallback(
+    (contactCode: string, updates: Partial<ContactInfo>) => {
+      setUser((current) => {
+        const nextUser = {
+          ...current,
+          contacts: current.contacts.map((contact) =>
+            contact.contactCode === contactCode ? { ...contact, ...updates } : contact
+          ),
+        };
+
+        persistState(nextUser, authenticated, registeredUsers);
+        return nextUser;
+      });
+    },
+    [authenticated, persistState, registeredUsers]
+  );
+
+  const removeContact = useCallback(
+    (contactCode: string) => {
+      setUser((current) => {
+        const nextUser = {
+          ...current,
+          contacts: current.contacts.filter((contact) => contact.contactCode !== contactCode),
+        };
+
+        persistState(nextUser, authenticated, registeredUsers);
+        return nextUser;
+      });
+    },
+    [authenticated, persistState, registeredUsers]
   );
 
   const updateUser = useCallback((userInfo: UserInfo) => {
-    setUser({
+    const nextUser = {
       ...defaultUserInfo,
       ...userInfo,
       uniqueCode: userInfo.uniqueCode ?? defaultUserInfo.uniqueCode,
       contacts: userInfo.contacts ?? defaultUserInfo.contacts,
       incomingContacts: userInfo.incomingContacts ?? defaultUserInfo.incomingContacts,
-    });
+    };
+
+    setUser(nextUser);
+    persistState(nextUser, authenticated, registeredUsers);
+  }, [authenticated, persistState, registeredUsers]);
+
+  useEffect(() => {
+    async function loadStoredState() {
+      try {
+        const storedUsers = await SecureStore.getItemAsync(STORAGE_KEYS.registeredUsers);
+        const storedAuth = await SecureStore.getItemAsync(STORAGE_KEYS.authenticated);
+        const storedUser = await SecureStore.getItemAsync(STORAGE_KEYS.user);
+
+        if (storedUsers) {
+          setRegisteredUsers(JSON.parse(storedUsers));
+        }
+
+        if (storedAuth === 'true' && storedUser) {
+          setUser(JSON.parse(storedUser));
+          setAuthenticated(true);
+        }
+      } catch {
+        // ignore
+      } finally {
+        setIsInitialized(true);
+      }
+    }
+
+    loadStoredState();
   }, []);
 
   const value = useMemo(
@@ -242,8 +341,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       logout,
       findUserByCode,
       addContactByCode,
+      updateContact,
+      removeContact,
     }),
-    [user, authenticated, updateUser, registerUser, login, logout, findUserByCode, addContactByCode]
+    [user, authenticated, updateUser, registerUser, login, logout, findUserByCode, addContactByCode, updateContact, removeContact]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

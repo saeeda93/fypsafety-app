@@ -15,17 +15,28 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agree, setAgree] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const handleCreateAccount = () => {
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedPassword) {
+      setFormError('Name, email, and password are required.');
+      return;
+    }
+
     if (!agree) {
+      setFormError('You must agree to the terms to continue.');
       return;
     }
 
     registerUser({
-      name: fullName.trim() || 'SafeGuard User',
-      email: email.trim() || 'user@safe.io',
+      name: trimmedName,
+      email: trimmedEmail,
       phone: phone.trim() || '+1 (555) 000-0000',
-      password: password || 'password123',
+      password: trimmedPassword,
     });
 
     router.replace('/home?showPermissions=1');
@@ -111,14 +122,19 @@ export default function SignupScreen() {
             </View>
 
             <Pressable
-              style={[styles.primaryButton, !agree && styles.disabledButton]}
-              disabled={!agree}
+              style={[styles.primaryButton, (!agree || !fullName.trim() || !email.trim() || !password.trim()) && styles.disabledButton]}
+              disabled={!agree || !fullName.trim() || !email.trim() || !password.trim()}
               onPress={handleCreateAccount}
             >
               <ThemedText type="default" style={styles.primaryButtonText}>
                 Create Account
               </ThemedText>
             </Pressable>
+            {formError ? (
+              <ThemedText type="small" themeColor="textSecondary" style={styles.errorText}>
+                {formError}
+              </ThemedText>
+            ) : null}
 
             <ThemedText type="small" style={styles.dividerText}>
               or
@@ -236,6 +252,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingTop: Spacing.two,
+  },
+  errorText: {
+    color: '#c8554f',
+    marginTop: Spacing.two,
   },
   linkText: {
     fontWeight: '700',
