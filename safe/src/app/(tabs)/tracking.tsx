@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, LayoutChangeEvent, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, LayoutChangeEvent, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import ActualMap from '@/components/actual-map';
 import { useLocationSharing } from '@/hooks/use-location';
+import { useBoundaries } from '@/hooks/use-boundaries';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -29,7 +30,11 @@ export default function TrackingScreen() {
   const [dragging, setDragging] = useState(false);
   const [showLocationHistory, setShowLocationHistory] = useState(false);
   const [visibleLocations, setVisibleLocations] = useState(5);
+  const [showBoundaryModal, setShowBoundaryModal] = useState(false);
+  const [boundaryName, setBoundaryName] = useState('');
+  const [savingBoundary, setSavingBoundary] = useState(false);
   const { consentGranted, location, error, loading, enableLocationSharing, refreshLocation } = useLocationSharing();
+  const { boundaries, addBoundary } = useBoundaries();
 
   const incrementRadius = () => setRadius((value) => Math.min(maxRadius, Math.round((value + 0.5) * 10) / 10));
   const decrementRadius = () => setRadius((value) => Math.max(minRadius, Math.round((value - 0.5) * 10) / 10));
@@ -64,6 +69,37 @@ export default function TrackingScreen() {
       refreshLocation();
     }
   }, [consentGranted]);
+
+  const handleSaveBoundary = async () => {
+    if (!boundaryName.trim()) {
+      alert('Please enter a boundary name');
+      return;
+    }
+
+    if (!location?.coords) {
+      alert('Unable to get current location. Please try again.');
+      return;
+    }
+
+    setSavingBoundary(true);
+    try {
+      await addBoundary({
+        name: boundaryName.trim(),
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        radius,
+        alertsEnabled,
+      });
+      alert('Boundary saved successfully!');
+      setBoundaryName('');
+      setShowBoundaryModal(false);
+    } catch (err) {
+      alert('Failed to save boundary. Please try again.');
+      console.error('Save boundary error:', err);
+    } finally {
+      setSavingBoundary(false);
+    }
+  };
 
   return (
     <ThemedView style={styles.scene}>
@@ -206,7 +242,35 @@ export default function TrackingScreen() {
             </View>
           </View>
 
-          <Pressable style={styles.saveButton} onPress={() => {}}>
+          {boundaries.length > 0 && (
+            <View style={styles.savedBoundariesSection}>
+              <ThemedText type="default" style={styles.savedBoundariesTitle}>
+                Saved Boundaries ({boundaries.length})
+              </ThemedText>
+              <View style={styles.boundariesList}>
+                {boundaries.slice(0, 3).map((boundary) => (
+                  <View key={boundary.id} style={styles.boundaryCard}>
+                    <View style={styles.boundaryCardHeader}>
+                      <ThemedText type="smallBold" style={styles.boundaryCardName}>
+                        {boundary.name}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {boundary.radius.toFixed(1)} km
+                      </ThemedText>
+                    </View>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Created: {new Date(boundary.createdAt).toLocaleDateString()}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Alerts: {boundary.alertsEnabled ? '✓ Enabled' : '○ Disabled'}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <Pressable style={styles.saveButton} onPress={() => setShowBoundaryModal(true)}>
             <ThemedText type="default" style={styles.saveButtonText}>
               Save Boundary
             </ThemedText>
@@ -294,6 +358,97 @@ export default function TrackingScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
+
+      {/* Save Boundary Modal */}
+      <Modal
+        visible={showBoundaryModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowBoundaryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowBoundaryModal(false)}>
+                <ThemedText style={styles.modalCloseText}>✕</ThemedText>
+              </Pressable>
+              <ThemedText type="subtitle">Save Boundary</ThemedText>
+              <View style={{ width: 24 }} />
+            </View>
+
+            <View style={styles.modalBody}>
+              <ThemedText type="default" style={styles.modalLabel}>
+                Boundary Name
+              </ThemedText>
+              <TextInput
+                style={styles.boundaryNameInput}
+                placeholder="e.g., Home, Work, School"
+                placeholderTextColor="#999"
+                value={boundaryName}
+                onChangeText={setBoundaryName}
+                editable={!savingBoundary}
+              />
+
+              <View style={styles.boundaryPreview}>
+                <ThemedText type="smallBold" style={styles.previewTitle}>
+                  Summary
+                </ThemedText>
+                <View style={styles.previewRow}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Location:
+                  </ThemedText>
+                  <ThemedText type="small" style={styles.previewValue}>
+                    {location?.coords
+                      ? `${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`
+                      : 'Getting location...'}
+                  </ThemedText>
+                </View>
+                <View style={styles.previewRow}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Radius:
+                  </ThemedText>
+                  <ThemedText type="small" style={styles.previewValue}>
+                    {radius.toFixed(1)} km
+                  </ThemedText>
+                </View>
+                <View style={styles.previewRow}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Alerts:
+                  </ThemedText>
+                  <ThemedText type="small" style={styles.previewValue}>
+                    {alertsEnabled ? 'Enabled' : 'Disabled'}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.modalFooter}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowBoundaryModal(false)}
+                disabled={savingBoundary}
+              >
+                <ThemedText type="default" style={styles.cancelButtonText}>
+                  Cancel
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.confirmButton, savingBoundary && styles.disabledButton]}
+                onPress={handleSaveBoundary}
+                disabled={savingBoundary}
+              >
+                {savingBoundary ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <ThemedText type="default" style={styles.confirmButtonText}>
+                    Save Boundary
+                  </ThemedText>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -608,5 +763,129 @@ const styles = StyleSheet.create({
   loadEarlierText: {
     color: '#c8554f',
     fontWeight: '600',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: Spacing.four,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.four,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f2f4f7',
+  },
+  modalCloseText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#999',
+  },
+  modalBody: {
+    padding: Spacing.four,
+    gap: Spacing.four,
+  },
+  modalLabel: {
+    fontWeight: '700',
+    marginBottom: Spacing.two,
+  },
+  boundaryNameInput: {
+    borderWidth: 1,
+    borderColor: '#e8e8ea',
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+    fontSize: 16,
+    color: '#000',
+  },
+  boundaryPreview: {
+    backgroundColor: '#f9ede7',
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+    gap: Spacing.two,
+  },
+  previewTitle: {
+    marginBottom: Spacing.one,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.one,
+  },
+  previewValue: {
+    fontWeight: '600',
+    color: '#333',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    padding: Spacing.four,
+    borderTopWidth: 1,
+    borderTopColor: '#f2f4f7',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.four,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f2f4f7',
+  },
+  cancelButtonText: {
+    color: '#333',
+    fontWeight: '700',
+  },
+  confirmButton: {
+    backgroundColor: '#c8554f',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  // Saved Boundaries Section Styles
+  savedBoundariesSection: {
+    gap: Spacing.two,
+  },
+  savedBoundariesTitle: {
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  boundariesList: {
+    gap: Spacing.two,
+  },
+  boundaryCard: {
+    padding: Spacing.three,
+    backgroundColor: '#fff',
+    borderRadius: Spacing.three,
+    borderLeftWidth: 4,
+    borderLeftColor: '#c8554f',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  boundaryCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.one,
+  },
+  boundaryCardName: {
+    flex: 1,
   },
 });
